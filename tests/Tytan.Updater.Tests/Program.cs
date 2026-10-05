@@ -1,6 +1,8 @@
 using Tytan.Updater;
 using System.Net;
 using System.Text;
+using System.IO.Compression;
+using System.Text.Json;
 
 var tests = new List<(string Name, Func<Task> Run)>();
 void Test(string name, Action run) => tests.Add((name, () => { run(); return Task.CompletedTask; }));
@@ -92,6 +94,110 @@ Test("Base URL must use HTTPS without credentials or query", () =>
         catch (ArgumentException) { }
     }
 });
+
+byte[] MakeZip()
+{
+    using var output = new MemoryStream();
+    using (var archive = new ZipArchive(output, ZipArchiveMode.Create, leaveOpen: true))
+    using (var writer = new StreamWriter(archive.CreateEntry("example.txt").Open())) writer.Write("test package");
+    return output.ToArray();
+}
+async Task WithDirectory(Func<string, Task> run)
+{
+    var directory = Path.Combine(Path.GetTempPath(), "tytan-test-" + Guid.NewGuid().ToString("N"));
+    Directory.CreateDirectory(directory);
+    try { await run(directory); }
+    finally { Directory.Delete(directory, recursive: true); }
+}
+UpdateApiClient DownloadClient(byte[] bytes, Func<HttpRequestMessage, HttpContent>? content = null, string? path = null, long? size = null)
+{
+    var entry = new FileEntry("Faktury_008.000.043.zip", "file", size ?? bytes.Length, null, path ?? "cliente/Faktury_008.000.043.zip");
+    return new(new Uri("https://example.test/SQLupdate/"), "test", "secret", new StubHandler((request, _) =>
+    {
+        if (request.RequestUri!.AbsolutePath.EndsWith("api.php"))
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(JsonSerializer.Serialize(new[] { entry })) });
+        Equal("https://example.test/SQLupdate/download.php?file=cliente%2FFaktury_008.000.043.zip", request.RequestUri.AbsoluteUri);
+        Equal("Basic", request.Headers.Authorization?.Scheme);
+        return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = content?.Invoke(request) ?? new ByteArrayContent(bytes) });
+    }));
+}
+AsyncTest("Full flow publishes a valid ZIP and leaves installed version unchanged", () => WithDirectory(async directory =>
+{
+    var bytes = MakeZip();
+    using var client = DownloadClient(bytes);
+    var result = await new UpdateService(client).CheckAndDownloadAsync(new("cliente", "Faktury", "008.000.042", directory));
+    Equal(UpdateStatus.Downloaded, result.Status);
+    Equal("008.000.042", result.InstalledVersion);
+    Equal("008.000.043", result.AvailableVersion);
+    Equal(true, bytes.SequenceEqual(await File.ReadAllBytesAsync(result.LocalPath!)));
+    Equal(1, Directory.GetFiles(directory).Length);
+}));
+AsyncTest("Equal or newer installed version does not download", () => WithDirectory(async directory =>
+{
+    using var client = DownloadClient(MakeZip(), _ => throw new Exception("Unexpected download"));
+    foreach (var version in new[] { "008.000.043", "008.000.044" })
+        Equal(UpdateStatus.NoUpdate, (await new UpdateService(client).CheckAndDownloadAsync(new("cliente", "Faktury", version, directory))).Status);
+    Equal(0, Directory.GetFiles(directory).Length);
+}));
+AsyncTest("Corrupt ZIP, wrong size and interrupted stream never publish a package", () => WithDirectory(async directory =>
+{
+    var zip = MakeZip();
+    foreach (var kind in new[] { "corrupt", "size", "interrupted" })
+    {
+        using var client = kind switch {
+            "corrupt" => DownloadClient(Encoding.UTF8.GetBytes("not a zip")),
+            "size" => DownloadClient(zip, size: zip.Length + 1),
+            _ => DownloadClient(zip, _ => new StreamContent(new InterruptedStream())) };
+        var result = await new UpdateService(client).CheckAndDownloadAsync(new("cliente", "Faktury", "008.000.042", directory));
+        Equal(UpdateStatus.Error, result.Status);
+        Equal<string?>(null, result.LocalPath);
+        Equal(0, Directory.GetFiles(directory).Length);
+    }
+}));
+AsyncTest("Cross-client paths and traversal are rejected", () => WithDirectory(async directory =>
+{
+    foreach (var path in new[] { "other/Faktury_008.000.043.zip", "cliente/../Faktury_008.000.043.zip", "https://other.test/x", "cliente/x.zip" })
+    {
+        using var client = DownloadClient(MakeZip(), _ => throw new Exception("Unexpected download"), path);
+        Equal(UpdateStatus.Error, (await new UpdateService(client).CheckAndDownloadAsync(new("cliente", "Faktury", "008.000.042", directory))).Status);
+        Equal(0, Directory.GetFiles(directory).Length);
+    }
+}));
+AsyncTest("Existing destination is preserved", () => WithDirectory(async directory =>
+{
+    var target = Path.Combine(directory, "Faktury_008.000.043.zip");
+    await File.WriteAllTextAsync(target, "existing file");
+    using var client = DownloadClient(MakeZip(), _ => throw new Exception("Unexpected download"));
+    Equal(UpdateStatus.Error, (await new UpdateService(client).CheckAndDownloadAsync(new("cliente", "Faktury", "008.000.042", directory))).Status);
+    Equal("existing file", await File.ReadAllTextAsync(target));
+    Equal(1, Directory.GetFiles(directory).Length);
+}));
+AsyncTest("Cancellation during download cleans partial file", () => WithDirectory(async directory =>
+{
+    using var cancellation = new CancellationTokenSource();
+    using var client = DownloadClient(MakeZip(), _ => { cancellation.Cancel(); return new ByteArrayContent(MakeZip()); });
+    var result = await new UpdateService(client).CheckAndDownloadAsync(new("cliente", "Faktury", "008.000.042", directory), cancellation.Token);
+    Equal(UpdateStatus.Cancelled, result.Status);
+    Equal<string?>(null, result.LocalPath);
+    Equal(0, Directory.GetFiles(directory).Length);
+}));
+AsyncTest("Concurrent downloads publish one file without overwrite", () => WithDirectory(async directory =>
+{
+    using var client = DownloadClient(MakeZip());
+    var service = new UpdateService(client);
+    var request = new UpdateRequest("cliente", "Faktury", "008.000.042", directory);
+    var results = await Task.WhenAll(service.CheckAndDownloadAsync(request), service.CheckAndDownloadAsync(request));
+    Equal(1, results.Count(r => r.Status == UpdateStatus.Downloaded));
+    Equal(1, results.Count(r => r.Status == UpdateStatus.Error));
+    Equal(1, Directory.GetFiles(directory).Length);
+}));
+AsyncTest("Invalid input produces an error without any HTTP request", () => WithDirectory(async directory =>
+{
+    using var client = new UpdateApiClient(new Uri("https://example.test/"), "test", "secret",
+        new StubHandler((_, _) => throw new Exception("Unexpected request")));
+    var result = await new UpdateService(client).CheckAndDownloadAsync(new("cliente", "Faktury", "invalid", directory));
+    Equal(UpdateStatus.Error, result.Status);
+}));
 
 var failed = 0;
 foreach (var test in tests)
