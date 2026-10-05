@@ -72,6 +72,7 @@ using System.Text.Json.Serialization;
 
 namespace Tytan.Updater;
 
+// One file or folder from the API listing. Attributes map the lowercase JSON fields.
 public sealed record FileEntry(
     [property: JsonPropertyName("name")] string Name,
     [property: JsonPropertyName("type")] string Type,
@@ -79,11 +80,33 @@ public sealed record FileEntry(
     [property: JsonPropertyName("modified")] string? Modified,
     [property: JsonPropertyName("path")] string Path);
 
-public sealed record UpdateRequest(string ClientFolder, string Product, string InstalledVersion, string DestinationDirectory);
+// Tytan supplies these values; the updater does not inspect the installed application.
+public sealed record UpdateRequest(
+    string ClientFolder,
+    string Product,
+    string InstalledVersion,
+    string DestinationDirectory);
+
+// A remote file paired with its parsed numeric version.
 public sealed record UpdatePackage(FileEntry File, PackageVersion Version);
-public enum UpdateStatus { NoUpdate, Downloaded, Error, Cancelled }
-public sealed record UpdateResult(UpdateStatus Status, string Product, string InstalledVersion,
-    string? AvailableVersion = null, string? LocalPath = null, string? Message = null);
+
+// Downloaded means the ZIP is ready for Tytan, not that it has been installed.
+public enum UpdateStatus
+{
+    NoUpdate,
+    Downloaded,
+    Error,
+    Cancelled
+}
+
+// LocalPath is populated only after a complete package has been published locally.
+public sealed record UpdateResult(
+    UpdateStatus Status,
+    string Product,
+    string InstalledVersion,
+    string? AvailableVersion = null,
+    string? LocalPath = null,
+    string? Message = null);
 ```
 
 `FileEntry` represents a JSON listing entry. `JsonPropertyName("name")` maps the lowercase JSON field to the C# property `Name`. This avoids depending on case-insensitive deserialization. `long?` and `string?` allow null values.
@@ -109,9 +132,15 @@ Source: `src/Tytan.Updater/UpdateService.cs`
             var files = await api.ListAsync(request.ClientFolder, cancellationToken);
             var package = PackageSelector.SelectNewest(files, request.Product);
             available = package?.Version.ToString();
+
+            // Missing, equal, or older versions do not trigger a download.
             if (package is null || package.Version.CompareTo(installed) <= 0)
+            {
                 return new(UpdateStatus.NoUpdate, request.Product, request.InstalledVersion, available,
                     Message: package is null ? "No package is available for this product." : "No newer version is available.");
+            }
+
+            // Deliver the ZIP path while preserving the original installed version.
             var path = await api.DownloadAsync(package, request.ClientFolder, request.DestinationDirectory, cancellationToken);
             return new(UpdateStatus.Downloaded, request.Product, request.InstalledVersion, available, path,
                 "Package downloaded; Tytan can proceed with installation.");
@@ -135,6 +164,8 @@ Source: `src/Tytan.Updater/UpdateService.cs`
                 request.Product, request.InstalledVersion, available,
                 Message: cancellationToken.IsCancellationRequested ? "Operation cancelled." : "Request timed out.");
         }
+
+        // Avoid leaking raw request details through connection error messages.
         catch (HttpRequestException e)
         {
             return new(UpdateStatus.Error, request.Product, request.InstalledVersion, available,
@@ -163,9 +194,16 @@ Source: `src/Tytan.Updater/UpdateApiClient.cs`
 ```csharp
         var requestTimeout = timeout ?? TimeSpan.FromMinutes(2);
         if (requestTimeout <= TimeSpan.Zero || requestTimeout > TimeSpan.FromDays(1))
+        {
             throw new ArgumentOutOfRangeException(nameof(timeout));
+        }
+
         this.baseUri = new Uri(baseUri.AbsoluteUri.TrimEnd('/') + "/");
+
+        // Base64 encodes credentials; HTTPS provides transport encryption.
         authentication = new("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes(username + ":" + password)));
+
+        // Disable redirects so access stays on the configured endpoint.
         http = new HttpClient(handler ?? new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = requestTimeout };
 ```
 
@@ -178,20 +216,35 @@ The default timeout is two minutes. Automatic redirects are disabled. This avoid
 Source: `src/Tytan.Updater/UpdateApiClient.cs`
 
 ```csharp
-        if (clientFolder is not null) PathRules.ValidateSegment(clientFolder, "Client folder");
+        if (clientFolder is not null)
+        {
+            PathRules.ValidateSegment(clientFolder, "Client folder");
+        }
+
+        // Encode query values so spaces and punctuation do not alter the URL.
         var endpoint = "api.php" + (clientFolder is null ? "" : "?dir=" + Uri.EscapeDataString(clientFolder));
         using var request = CreateRequest(endpoint);
         using var response = await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
         CheckResponse(response);
+
+        // Read JSON from the response stream instead of buffering it as a string.
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+
+        // The body read has its own timeout after the response headers arrive.
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(http.Timeout);
+
         try
         {
             var entries = await JsonSerializer.DeserializeAsync<List<FileEntry>>(stream, cancellationToken: timeout.Token);
+
+            // Fail clearly on incomplete listings rather than reporting no update.
             if (entries is null || entries.Any(e => e is null || string.IsNullOrEmpty(e.Name) ||
                 e.Type is not ("file" or "folder") || string.IsNullOrEmpty(e.Path) || e.Size is < 0))
+            {
                 throw new InvalidDataException("The server listing contains incomplete or invalid data.");
+            }
+
             return entries;
         }
 ```
@@ -214,9 +267,14 @@ Source: `src/Tytan.Updater/UpdateApiClient.cs`
         return request;
     }
 
+    // Error responses must not be interpreted as a listing or a ZIP package.
     private static void CheckResponse(HttpResponseMessage response)
     {
-        if (response.IsSuccessStatusCode) return;
+        if (response.IsSuccessStatusCode)
+        {
+            return;
+        }
+
         var message = response.StatusCode switch
         {
             HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden => "Access denied by the server.",
@@ -224,6 +282,7 @@ Source: `src/Tytan.Updater/UpdateApiClient.cs`
             _ when (int)response.StatusCode is >= 300 and < 400 => "The server returned a redirect; check the base URL.",
             _ => $"The server returned HTTP error {(int)response.StatusCode}."
         };
+
         throw new HttpRequestException(message, null, response.StatusCode);
     }
 ```
@@ -244,14 +303,27 @@ Source: `src/Tytan.Updater/PackageVersion.cs`
     public static bool TryParse(string? value, out PackageVersion version)
     {
         version = default;
-        if (value is null) return false;
+        if (value is null)
+        {
+            return false;
+        }
+
+        // Three components are required, but each can have a different digit count.
         var parts = value.Split('.');
-        if (parts.Length != 3) return false;
+        if (parts.Length != 3)
+        {
+            return false;
+        }
+
+        // Accept only nonnegative integer components that fit in an int.
         var numbers = new int[3];
         for (var i = 0; i < parts.Length; i++)
         {
             if (parts[i].Length == 0 || !parts[i].All(c => c is >= '0' and <= '9') ||
-                !int.TryParse(parts[i], NumberStyles.None, CultureInfo.InvariantCulture, out numbers[i])) return false;
+                !int.TryParse(parts[i], NumberStyles.None, CultureInfo.InvariantCulture, out numbers[i]))
+            {
+                return false;
+            }
         }
         version = new(numbers[0], numbers[1], numbers[2]);
         return true;
@@ -270,11 +342,16 @@ Source: `src/Tytan.Updater/PackageVersion.cs`
     public int CompareTo(PackageVersion other)
     {
         var result = Major.CompareTo(other.Major);
-        if (result != 0) return result;
+        if (result != 0)
+        {
+            return result;
+        }
+
         result = Minor.CompareTo(other.Minor);
         return result != 0 ? result : Patch.CompareTo(other.Patch);
     }
 
+    // D3 preserves the familiar display format, such as 008.000.043.
     public override string ToString() => string.Create(CultureInfo.InvariantCulture, $"{Major:D3}.{Minor:D3}.{Patch:D3}");
 ```
 
@@ -291,17 +368,33 @@ Source: `src/Tytan.Updater/PackageSelector.cs`
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(product);
         UpdatePackage? newest = null;
+
         var prefix = product + "_";
+
+        // Including the separator prevents Faktury from matching FakturyExtra.
         foreach (var file in files)
         {
             if (file is null || file.Type != "file" || string.IsNullOrEmpty(file.Name) ||
                 !file.Name.StartsWith(prefix, StringComparison.Ordinal) ||
-                !file.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) continue;
+                !file.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            // Remove the product prefix and the four-character .zip extension.
             var versionText = file.Name[prefix.Length..^4];
-            if (!PackageVersion.TryParse(versionText, out var version)) continue;
+            if (!PackageVersion.TryParse(versionText, out var version))
+            {
+                continue;
+            }
+
+            // Equal versions keep the first matching entry from the listing.
             if (newest is null || version.CompareTo(newest.Version) > 0)
+            {
                 newest = new(file, version);
+            }
         }
+
         return newest;
     }
 ```
@@ -323,25 +416,35 @@ namespace Tytan.Updater;
 
 internal static class PathRules
 {
+    // Validate a single folder or filename, not a nested relative path.
     public static void ValidateSegment(string? value, string label)
     {
         if (string.IsNullOrWhiteSpace(value) || value is "." or ".." ||
             value.Any(c => char.IsControl(c) || "<>:\"/\\|?*".Contains(c)) ||
             value.EndsWith('.') || value.EndsWith(' '))
+        {
             throw new ArgumentException($"{label}: invalid name.");
+        }
+
+        // Windows device names remain reserved even with a file extension.
         var stem = value.Split('.')[0];
         if (new[] { "CON", "PRN", "AUX", "NUL" }.Contains(stem, StringComparer.OrdinalIgnoreCase) ||
             (stem.Length == 4 && (stem.StartsWith("COM", StringComparison.OrdinalIgnoreCase) ||
              stem.StartsWith("LPT", StringComparison.OrdinalIgnoreCase)) && stem[3] is >= '1' and <= '9'))
+        {
             throw new ArgumentException($"{label}: reserved name.");
+        }
     }
 
+    // Reject traversal and files belonging to a different client folder.
     public static void ValidatePackage(FileEntry entry, string folder)
     {
         ValidateSegment(folder, "Client folder");
         ValidateSegment(entry.Name, "File");
         if (entry.Path != folder + "/" + entry.Name || entry.Type != "file" || entry.Size is < 0)
+        {
             throw new InvalidDataException("The package does not belong to the requested folder or contains invalid data.");
+        }
     }
 }
 ```
@@ -366,7 +469,11 @@ Source: `src/Tytan.Updater/PackageDownload.cs`
         Directory.CreateDirectory(destination);
         var finalPath = Path.Combine(destination, package.File.Name);
         if (File.Exists(finalPath) || Directory.Exists(finalPath))
+        {
             throw new IOException("The destination file already exists; it will not be overwritten.");
+        }
+
+        // A unique name lets concurrent attempts write separate temporary files.
         var temporary = Path.Combine(destination, $".tytan-{Guid.NewGuid():N}.part");
 ```
 
@@ -382,15 +489,21 @@ Source: `src/Tytan.Updater/PackageDownload.cs`
             using var request = CreateRequest("download.php?file=" + Uri.EscapeDataString(package.File.Path));
             using var response = await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token);
             CheckResponse(response);
+
+            // Stream directly to disk and prevent sharing the open temporary file.
             await using (var source = await response.Content.ReadAsStreamAsync(token))
             await using (var output = new FileStream(temporary, FileMode.CreateNew, FileAccess.Write, FileShare.None,
                 81920, FileOptions.Asynchronous))
             {
                 await source.CopyToAsync(output, token);
                 await output.FlushAsync(token);
+
+                // Check both advertised sizes when present; either mismatch fails.
                 if ((package.File.Size is long expected && output.Length != expected) ||
                     (response.Content.Headers.ContentLength is long length && output.Length != length))
+                {
                     throw new InvalidDataException("The downloaded size does not match the expected size.");
+                }
             }
 ```
 
@@ -407,6 +520,7 @@ Source: `src/Tytan.Updater/PackageDownload.cs`
 ```csharp
             await ValidateZipAsync(temporary, token);
             token.ThrowIfCancellationRequested();
+
             // Same-directory move publishes only complete files, and never replaces another download.
             File.Move(temporary, finalPath, overwrite: false);
             return finalPath;
@@ -414,9 +528,22 @@ Source: `src/Tytan.Updater/PackageDownload.cs`
         finally
         {
             // Delete only this operation's temporary file; preserve the original failure if cleanup fails.
-            try { if (File.Exists(temporary)) File.Delete(temporary); }
-            catch (IOException) { }
-            catch (UnauthorizedAccessException) { }
+
+            try
+            {
+                if (File.Exists(temporary))
+                {
+                    File.Delete(temporary);
+                }
+            }
+            catch (IOException)
+            {
+                // Leave an inaccessible temporary file rather than hide the original error.
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // Cleanup is best-effort when the operating system denies deletion.
+            }
         }
     }
 ```
@@ -427,7 +554,11 @@ Source: `src/Tytan.Updater/PackageDownload.cs`
     private static async Task ValidateZipAsync(string path, CancellationToken token)
     {
         using var archive = ZipFile.OpenRead(path);
-        if (archive.Entries.Count == 0) throw new InvalidDataException("The ZIP archive contains no files.");
+        if (archive.Entries.Count == 0)
+        {
+            throw new InvalidDataException("The ZIP archive contains no files.");
+        }
+
         foreach (var entry in archive.Entries)
         {
             token.ThrowIfCancellationRequested();
@@ -466,6 +597,8 @@ Source: `src/Tytan.Updater.Cli/Program.cs`
         Console.Error.WriteLine("Set TYTAN_USERNAME and TYTAN_PASSWORD outside the repository.");
         return 2;
     }
+
+    // No real request is made to demo.invalid when DemoHandler is injected.
     var baseUrl = demo ? "https://demo.invalid/SQLupdate/" :
         Environment.GetEnvironmentVariable("TYTAN_BASE_URL") ?? "https://tytan.poznan.pl/SQLupdate/";
     using var api = new UpdateApiClient(new Uri(baseUrl), username, password, demo ? new DemoHandler() : null);
@@ -482,7 +615,14 @@ Source: `src/Tytan.Updater.Cli/Program.cs`
         new UpdateRequest(args[1], args[2], args[3], args[4]);
     var result = await new UpdateService(api).CheckAndDownloadAsync(request, cancellation.Token);
     Console.WriteLine(JsonSerializer.Serialize(result, json));
-    return result.Status switch { UpdateStatus.Error => 1, UpdateStatus.Cancelled => 130, _ => 0 };
+
+    // Exit codes allow a calling script to distinguish failure and cancellation.
+    return result.Status switch
+    {
+        UpdateStatus.Error => 1,
+        UpdateStatus.Cancelled => 130,
+        _ => 0
+    };
 ```
 
 The result is printed as indented JSON. JsonStringEnumConverter outputs names such as `Downloaded` rather than enum numbers. The CLI returns 0 for success or no update, 1 for service errors, 2 for invalid CLI arguments/configuration, and 130 for caller-requested cancellation.
@@ -493,7 +633,11 @@ Source: `src/Tytan.Updater.Cli/Program.cs`
 
 ```csharp
 using var cancellation = new CancellationTokenSource();
-ConsoleCancelEventHandler cancel = (_, e) => { e.Cancel = true; cancellation.Cancel(); };
+ConsoleCancelEventHandler cancel = (_, e) =>
+{
+    e.Cancel = true;
+    cancellation.Cancel();
+};
 Console.CancelKeyPress += cancel;
 ```
 
@@ -507,10 +651,13 @@ Source: `src/Tytan.Updater.Cli/DemoHandler.cs`
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+
+        // api.php returns JSON; the download request returns the sample ZIP.
         HttpContent content = request.RequestUri!.AbsolutePath.EndsWith("api.php", StringComparison.Ordinal)
             ? new StringContent(JsonSerializer.Serialize(new[] {
                 new FileEntry("Demo_001.000.002.zip", "file", package.Length, null, "demo/Demo_001.000.002.zip") }))
             : new ByteArrayContent(package);
+
         return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = content });
     }
 ```

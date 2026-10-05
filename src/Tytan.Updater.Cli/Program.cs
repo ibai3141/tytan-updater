@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Tytan.Updater;
 
+// Keep console output readable and show help before creating an HTTP client.
 Console.OutputEncoding = Encoding.UTF8;
 if (args.Length == 0 || args is ["--help"])
 {
@@ -18,18 +19,29 @@ if (args.Length == 0 || args is ["--help"])
         """);
     return 0;
 }
+
+// Check command shapes so positional arguments can be accessed safely.
 if (!(args is ["list", _] or ["download", _, _, _, _] or ["demo", _]))
 {
     Console.Error.WriteLine("Invalid arguments. See --help.");
     return 2;
 }
 
+// Print result statuses as names, such as Downloaded, rather than numbers.
 var json = new JsonSerializerOptions { WriteIndented = true, Converters = { new JsonStringEnumConverter() } };
+
+// Ctrl+C requests cooperative cancellation instead of terminating immediately.
 using var cancellation = new CancellationTokenSource();
-ConsoleCancelEventHandler cancel = (_, e) => { e.Cancel = true; cancellation.Cancel(); };
+ConsoleCancelEventHandler cancel = (_, e) =>
+{
+    e.Cancel = true;
+    cancellation.Cancel();
+};
 Console.CancelKeyPress += cancel;
+
 try
 {
+    // Demo mode replaces HTTP transport; real mode reads external configuration.
     var demo = args[0] == "demo";
     var username = demo ? "demo" : Environment.GetEnvironmentVariable("TYTAN_USERNAME");
     var password = demo ? "demo" : Environment.GetEnvironmentVariable("TYTAN_PASSWORD");
@@ -38,19 +50,32 @@ try
         Console.Error.WriteLine("Set TYTAN_USERNAME and TYTAN_PASSWORD outside the repository.");
         return 2;
     }
+
+    // No real request is made to demo.invalid when DemoHandler is injected.
     var baseUrl = demo ? "https://demo.invalid/SQLupdate/" :
         Environment.GetEnvironmentVariable("TYTAN_BASE_URL") ?? "https://tytan.poznan.pl/SQLupdate/";
     using var api = new UpdateApiClient(new Uri(baseUrl), username, password, demo ? new DemoHandler() : null);
+
+    // Listing is read-only and does not invoke the download workflow.
     if (args[0] == "list")
     {
         Console.WriteLine(JsonSerializer.Serialize(await api.ListAsync(args[1], cancellation.Token), json));
         return 0;
     }
+
+    // The same service handles both the demo and actual update requests.
     var request = demo ? new UpdateRequest("demo", "Demo", "001.000.001", args[1]) :
         new UpdateRequest(args[1], args[2], args[3], args[4]);
     var result = await new UpdateService(api).CheckAndDownloadAsync(request, cancellation.Token);
     Console.WriteLine(JsonSerializer.Serialize(result, json));
-    return result.Status switch { UpdateStatus.Error => 1, UpdateStatus.Cancelled => 130, _ => 0 };
+
+    // Exit codes allow a calling script to distinguish failure and cancellation.
+    return result.Status switch
+    {
+        UpdateStatus.Error => 1,
+        UpdateStatus.Cancelled => 130,
+        _ => 0
+    };
 }
 catch (OperationCanceledException)
 {
@@ -68,4 +93,7 @@ catch (Exception e) when (e is ArgumentException or InvalidDataException or IOEx
     Console.Error.WriteLine("Invalid configuration, response or destination. Check the input values.");
     return 2;
 }
-finally { Console.CancelKeyPress -= cancel; }
+finally
+{
+    Console.CancelKeyPress -= cancel;
+}
