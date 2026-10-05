@@ -1,25 +1,26 @@
-# Registro de verificación
+# Verification record
 
-## 5 de octubre de 2026: consulta del servidor
+## October 5, 2026: live server query
 
-Se realizó una petición GET con BasicAuth a:
+A GET request with BasicAuth was sent to:
 
 ```text
 https://tytan.poznan.pl/SQLupdate/api.php?dir=Barcin_Wodbar
 ```
 
-Resultado: **HTTP 404**. No se descargaron paquetes. La petición no siguió redirecciones y las credenciales se leyeron del documento original, sin guardarlas en el repositorio.
+Result: **HTTP 404**. No packages were downloaded. The request did not follow redirects, and credentials were read from the original document without storing them in the repository. A subsequent query using the implemented CLI also returned HTTP 404.
 
-El usuario confirma que los endpoints están publicados; esta comprobación no permite confirmar el contrato real en esa dirección. Es necesario contrastar la ruta exacta publicada o el acceso con los responsables del servidor. Un 404 por sí solo no identifica la causa.
+The user confirms the endpoints are published; this result does not confirm the actual contract at that address. The exact published path or access must be checked with the server administrators. A 404 alone does not identify the cause.
 
-La implementación y las pruebas locales continúan con el contrato de la guía. No equivalen a una validación del servidor real ni de la aplicación Tytan.
+Implementation and local testing use the guide's contract. They do not validate the live server or Tytan's application.
 
-## Validación local de la implementación
+## Local implementation validation
 
-- Solución compilada en Release con .NET SDK 9.0.304: cero errores y cero avisos.
-- Ejecutable de pruebas: 15 de 15 casos aprobados. Incluye comparación, JSON, errores HTTP, descarga completa, ZIP inválido, tamaño incorrecto, interrupción, cancelación, rutas de otro cliente, conservación del destino y concurrencia.
-- CLI: demostración completa con resultado `Downloaded`; repetición con resultado `Error` y código 1, conservando el ZIP existente; ayuda con código 0.
-- La demostración se ejecutó en una carpeta temporal y se retiró su paquete de ejemplo al terminar.
-- Comprobación de espacios y formato de los cambios con `git diff --check`.
+- Release build with .NET SDK 9.0.304: zero errors and zero warnings.
+- Test executable: 15 of 15 cases passed. Coverage includes comparison, JSON, HTTP errors, complete downloads, invalid ZIPs, size mismatches, interruptions, cancellation, cross-client paths, destination preservation, and concurrency.
+- CLI: a complete demo returned `Downloaded`; repeating it returned `Error` and exit code 1 while preserving the existing ZIP; help returned exit code 0.
+- The demo ran in a temporary folder, and its sample package was removed afterward.
+- Whitespace and patch formatting were checked using `git diff --check`.
+- After translating console messages into English, all 15 tests passed again, and the demo printed `Package downloaded; Tytan can proceed with installation.`
 
-La aplicación real de Tytan no está en el repositorio: se ha entregado un ejemplo de integración, no una integración ejecutada en su programa. No se ha probado una descarga real porque la consulta del endpoint documentado respondió 404.
+Tytan's actual application is not in the repository: an integration example has been delivered, rather than integration executed inside its program. No live download has been tested because the documented listing endpoint returned 404.

@@ -1,62 +1,62 @@
-# Consulta y descarga de actualizaciones de TytanSQL
+# Checking and downloading TytanSQL updates
 
-Actualizado: 5 de octubre de 2026.
+Updated: October 5, 2026.
 
-## 1. Objetivo y alcance
+## 1. Objective and scope
 
-Implementar un módulo C# que TytanSQL pueda llamar para consultar la carpeta de un cliente, detectar una versión superior de un producto y descargar su ZIP a una carpeta local.
+Implement a C# module that TytanSQL can call to query a client's folder, detect a newer product version, and download its ZIP to a local folder.
 
-Tytan aplica el paquete y gestiona la versión instalada. Nuestro módulo termina al entregar el archivo completo y su resultado. No necesita inspeccionar la instalación, extraer paquetes, sustituir ejecutables, ejecutar SQL ni implementar copias de seguridad o recuperación de la instalación.
+Tytan applies the package and manages the installed version. Our module finishes by returning the complete file and its result. It does not inspect the installation, extract packages, replace executables, execute SQL, or implement installation backups or recovery.
 
-Hay información suficiente para empezar: lenguaje, autenticación, endpoints, listado JSON y regla de comparación están descritos. Una interfaz de entrada y salida permite desarrollar y probar el módulo sin necesitar el código completo de Tytan.
+There is enough information to start: the language, authentication, endpoints, JSON listing, and comparison rule are documented. An input/output interface allows development and testing without requiring Tytan's complete source code.
 
-## 2. Fuentes y confirmaciones
+## 2. Sources and confirmations
 
-| Fuente | Información |
+| Source | Information |
 | --- | --- |
-| `SQl_Update_Projekt_v_1.0.docx` | Carpeta por cliente, versión guardada en la aplicación y descarga de una versión superior |
-| `SQl_Update_Projekt_v_1.1.docx` | La carpeta contiene ZIP de las últimas versiones de todos los productos del cliente |
-| `Connect to your SQLupdate directory on the Idea server.docx` | C#, HttpClient, BasicAuth, listado JSON y descarga; ejemplos de cliente y servidor |
-| `Kopia zapasowa … .wbk` | Copia más corta de la guía, sin requisitos adicionales |
-| Usuario, 05/10/2026 | API y descarga ya publicadas; utilizar el entorno disponible; Tytan se encarga del proceso posterior |
+| `SQl_Update_Projekt_v_1.0.docx` | One folder per client, version stored in the application, and downloading a newer version |
+| `SQl_Update_Projekt_v_1.1.docx` | The folder contains ZIPs of the latest versions of all the client's products |
+| `Connect to your SQLupdate directory on the Idea server.docx` | C#, HttpClient, BasicAuth, JSON listing, and downloading; client and server examples |
+| `Kopia zapasowa ... .wbk` | A shorter backup of the guide without additional requirements |
+| User, October 5, 2026 | API and download endpoints already published; use the available environment; Tytan handles the subsequent process |
 
-Los originales están en `F:\SQL_Update`. El archivo `.~lock.…docx#` es temporal. Las credenciales no se copian al repositorio.
+The originals are in `F:\SQL_Update`. The `.~lock....docx#` file is temporary. Credentials are not copied into the repository.
 
-La publicación de los endpoints está confirmada por el usuario. La consulta real del 5 de octubre a `api.php?dir=Barcin_Wodbar` devolvió HTTP 404: véase [verificacion.md](verificacion.md). Los ejemplos siguientes describen la guía, no respuestas capturadas del servidor. La biblioteca y la herramienta de prueba están implementadas; el uso está en [uso.md](uso.md).
+The user confirms the endpoints are published. The live query on October 5 to `api.php?dir=Barcin_Wodbar` returned HTTP 404; see [Verification record](verificacion.md). The examples below describe the guide rather than captured server responses. The library and CLI are implemented; see [Usage](uso.md).
 
-## 3. Reparto de responsabilidades
+## 3. Responsibilities
 
-| TytanSQL | módulo de este repositorio |
+| TytanSQL | This repository's module |
 | --- | --- |
-| Proporcionar carpeta, producto y versión instalada | Consultar la carpeta y comparar versiones del producto |
-| Facilitar configuración de acceso y destino local | Autenticarse, descargar y guardar un paquete completo |
-| Decidir cuándo comprobar actualizaciones | Comunicar ausencia de actualización, descarga, cancelación o error |
-| Instalar el paquete y registrar la versión instalada | Entregar ruta local y versión del paquete descargado |
+| Supply the client folder, product, and installed version | Query the folder and compare product versions |
+| Supply access configuration and a local destination | Authenticate, download, and save a complete package |
+| Decide when to check for updates | Report no update, download completion, cancellation, or error |
+| Install the package and record the installed version | Return the local path and downloaded package version |
 
-## 4. API publicada
+## 4. Published API
 
-Dirección base: `https://tytan.poznan.pl/SQLupdate/`.
+Base URL: `https://tytan.poznan.pl/SQLupdate/`.
 
-Todas las peticiones requieren HTTPS y BasicAuth. Configurar HttpClient con credenciales recibidas desde configuración externa. No incrustarlas en código, URL, ejemplos o registros.
+Every request requires HTTPS and BasicAuth. Configure HttpClient using credentials supplied through external configuration. Do not embed credentials in code, URLs, examples, or logs.
 
-### Listar
+### Listing
 
 ```http
 GET /SQLupdate/api.php
 GET /SQLupdate/api.php?dir=Barcin_Wodbar
 ```
 
-La primera petición permite explorar las carpetas. Si Tytan ya proporciona la carpeta del cliente, consultar directamente la segunda.
+The first request explores folders. If Tytan already provides the client folder, query the second directly.
 
-| Campo JSON | Contenido |
+| JSON field | Content |
 | --- | --- |
-| `name` | Nombre del archivo o carpeta |
-| `type` | `file` o `folder` |
-| `size` | tamaño en bytes; puede ser nulo para carpetas |
-| `modified` | Fecha de modificación como texto |
-| `path` | Ruta relativa para la descarga |
+| `name` | File or folder name |
+| `type` | `file` or `folder` |
+| `size` | Size in bytes; can be null for folders |
+| `modified` | Modification date as text |
+| `path` | Relative path for downloading |
 
-Ejemplo ilustrativo basado en el esquema de la guía:
+Illustrative example based on the guide's schema:
 
 ```json
 [
@@ -70,47 +70,47 @@ Ejemplo ilustrativo basado en el esquema de la guía:
 ]
 ```
 
-Mapear expresamente los campos JSON en minúscula a las propiedades C#, o configurar la deserialización para admitir diferencias entre mayúsculas y minúsculas. La guía muestra propiedades como `Name`, mientras que su PHP devuelve `name`.
+Explicitly map lowercase JSON fields to C# properties, or configure case-insensitive deserialization. The guide shows properties such as `Name`, while its PHP returns `name`. The implementation uses explicit JSON property mappings.
 
-### Descargar
+### Downloading
 
 ```http
 GET /SQLupdate/download.php?file=Barcin_Wodbar/Faktury_008.000.043.zip
 ```
 
-Utilizar el campo `path` del archivo seleccionado y codificar los valores de los parámetros de consulta. Mantener las peticiones en la dirección base configurada.
+Use the selected file's `path` field and encode query parameter values. Keep requests within the configured base URL.
 
-El PHP documentado devuelve el contenido binario con tipo `application/octet-stream`, nombre de descarga y tamaño. No hay que desarrollar ni publicar PHP en este proyecto.
+The documented PHP returns binary content with an `application/octet-stream` content type, a download filename, and a size. This project does not need to develop or publish PHP.
 
-## 5. Contrato propuesto con Tytan
+## 5. Proposed contract with Tytan
 
-Los documentos no fijan firmas de métodos; este contrato es una propuesta para la implementación.
+The source documents do not define method signatures. The implemented interface follows this proposed contract.
 
-Entradas:
+Inputs:
 
-- Dirección base y credenciales desde configuración externa.
-- Carpeta del cliente, por ejemplo `Barcin_Wodbar`.
-- Producto o prefijo fijo, por ejemplo `Faktury`.
-- Versión instalada, por ejemplo `008.000.042`.
-- Carpeta local de destino.
-- Posibilidad de cancelar la operación.
+- Base URL and credentials from external configuration.
+- Client folder, such as `Barcin_Wodbar`.
+- Product or fixed prefix, such as `Faktury`.
+- Installed version, such as `008.000.042`.
+- Local destination folder.
+- A cancellation token.
 
-La versión llega como dato de entrada. No buscamos por nuestra cuenta en el registro, bases de datos o archivos de instalación.
+The version is an input value. The module does not search the registry, databases, or installation files for it.
 
-| Resultado | Información devuelta |
+| Result | Returned information |
 | --- | --- |
-| Sin actualización | Producto, versión instalada y versión disponible si existe |
-| Descargado | Producto, versión disponible y ruta local del ZIP completo |
-| Error | Motivo útil para Tytan; ninguna ruta presentada como descarga válida |
-| Cancelado | Operación interrumpida sin entregar un paquete parcial |
+| No update | Product, installed version, and available version if one exists |
+| Downloaded | Product, available version, and local path of the complete ZIP |
+| Error | A useful reason for Tytan; no path presented as a valid download |
+| Cancelled | Operation interrupted without returning a partial package |
 
-Si no existe un paquete del producto, indicar expresamente que no hay paquete disponible. Un fallo de acceso o JSON inválido es un error, no ausencia de actualización.
+If no package exists for the product, explicitly report that no package is available. Access failures or invalid JSON are errors, not an absence of updates.
 
-El módulo informa de una versión descargada, no instalada. Tytan registra la versión después de aplicar el ZIP.
+The module reports a downloaded version, not an installed one. Tytan records the version after applying the ZIP.
 
-## 6. Selección y comparación de versiones
+## 6. Version selection and comparison
 
-Los documentos muestran estos nombres, con extensión ZIP oculta en las capturas:
+The documents show these names, with the ZIP extension hidden in the screenshots:
 
 ```text
 Faktury_008.000.043.zip
@@ -118,14 +118,14 @@ FK2025_005.005.007.zip
 FK2026_005.005.040.zip
 ```
 
-Regla inicial: `<producto>_<versión>.zip`, con tres componentes numéricos separados por puntos.
+Initial rule: `<product>_<version>.zip`, with three numeric components separated by periods.
 
-1. Conservar entradas de tipo `file` y paquetes ZIP.
-2. Filtrar por el producto solicitado, incluyendo el separador `_` para evitar coincidencias con otros productos.
-3. Extraer y validar la versión.
-4. Comparar sus componentes como números.
-5. Seleccionar la versión más alta del mismo producto.
-6. Descargarla únicamente si es superior a la instalada.
+1. Keep entries of type `file` that are ZIP packages.
+2. Filter by the requested product, including the `_` separator to avoid matching other products.
+3. Extract and validate the version.
+4. Compare its components numerically.
+5. Select the highest version of the same product.
+6. Download only if it is newer than the installed version.
 
 ```text
 008.000.043 -> (8, 0, 43)
@@ -133,89 +133,91 @@ Regla inicial: `<producto>_<versión>.zip`, con tres componentes numéricos sepa
 (8, 2, 66) > (8, 0, 43)
 ```
 
-Versiones iguales o inferiores no provocan descarga. Cada producto se compara por separado. Ignorar nombres que no cumplen el patrón con un diagnóstico; una versión de entrada inválida es un error.
+Equal or lower versions do not trigger downloads. Products are compared separately. Ignore filenames that do not match the pattern; an invalid input version is an error.
 
-La fecha `modified` es informativa. Aunque la guía ordena por fecha en un ejemplo, el requisito pide comparar versiones: copiar un paquete recientemente no lo convierte en una versión superior.
+`modified` is informational. Although one guide example sorts by date, the requirement is to compare versions: copying a package recently does not make its version newer.
 
-El requisito es obtener el paquete más reciente. Las reglas de instalación y cualquier necesidad de pasos intermedios corresponden a Tytan.
+The requirement is to obtain the latest package. Installation rules and any need for intermediate steps belong to Tytan.
 
-## 7. Flujo
+## 7. Workflow
 
 ```text
-Recibir carpeta, producto, versión y destino desde Tytan
+Receive client folder, product, version, and destination from Tytan
     |
-Validar entradas y preparar HttpClient con BasicAuth
+Validate inputs and prepare HttpClient with BasicAuth
     |
-Consultar api.php?dir=<carpeta>
+Query api.php?dir=<folder>
     |
-Deserializar y seleccionar el ZIP de mayor versión del producto
+Deserialize and select the product's highest-version ZIP
     |
-Comparar con la versión instalada
-    +-- Sin paquete o versión igual/inferior -> devolver sin actualización
-    +-- Superior
+Compare with the installed version
+    +-- No package or equal/lower version -> return no update
+    +-- Newer version
          |
-       Descargar con download.php?file=<path> a un archivo temporal
+       Download with download.php?file=<path> to a temporary file
          |
-       Comprobar descarga completa y legibilidad del ZIP
+       Check download completeness and ZIP readability
          |
-       Publicar el archivo en el destino local
+       Publish the file in the local destination
          |
-       Devolver ruta y versión a Tytan
+       Return path and version to Tytan
 ```
 
-Descargar por flujo para no cargar todo el archivo en memoria. Un parcial no ocupa el nombre final ni se devuelve como paquete listo. Comprobar el tamaño si está disponible y que el ZIP se puede abrir sin extraerlo. La API documentada no ofrece un hash; no asumir verificación criptográfica del paquete.
+Stream downloads rather than loading the entire package into memory. A partial file must not occupy the final filename or be returned as ready. Check size when available and read the ZIP without extracting it. The documented API offers no hash, so do not assume cryptographic package verification.
 
-## 8. Organización propuesta
+## 8. Module structure
 
-| Componente C# | Responsabilidad |
+| C# component | Responsibility |
 | --- | --- |
-| Configuración | Servidor, autenticación y opciones de conexión |
-| Cliente API | HTTPS, lectura JSON y descarga |
-| Modelo de entrada remota | Campos `name`, `type`, `size`, `modified`, `path` |
-| Comparador de versiones | Interpretación numérica y selección por producto |
-| Servicio de actualización | Coordinación de consulta, comparación y descarga |
-| Modelos de entrada y resultado | Contrato para la llamada desde Tytan |
+| Configuration | Server, authentication, and connection options |
+| API client | HTTPS, JSON reading, and downloading |
+| Remote entry model | `name`, `type`, `size`, `modified`, and `path` fields |
+| Version comparer | Numeric interpretation and selection by product |
+| Update service | Coordinate queries, comparison, and downloading |
+| Input and result models | Contract for calls from Tytan |
 
-Usar el entorno .NET disponible y ajustar compatibilidad durante la integración. Un ejecutable de prueba puede comprobar el módulo sin la aplicación completa; el entregable es el módulo invocable desde Tytan.
+Use the available .NET environment and adjust compatibility during integration. The CLI can exercise the module without the complete application; the deliverable is the module callable from Tytan.
 
-## 9. Errores y manejo de archivos
+## 9. Errors and file handling
 
-- Distinguir autenticación rechazada, carpeta o archivo ausente, error del servidor, JSON inválido y fallo de conexión.
-- Gestionar tiempos de espera y cancelación; cualquier reintento será limitado.
-- Validar nombres y rutas: rechazar rutas absolutas y componentes `..`; mantener la descarga en la carpeta del cliente solicitado.
-- Mantener los archivos locales dentro del destino configurado; detectar permisos insuficientes y falta de espacio.
-- Evitar escrituras simultáneas al mismo archivo y definir qué hacer si el ZIP ya existe.
-- Limpiar temporales de operaciones fallidas sin borrar paquetes completos ajenos a ellas.
-- Registrar producto, versiones y resultado sin credenciales.
+- Distinguish rejected authentication, missing folders or files, server errors, invalid JSON, and connection failures.
+- Handle timeouts and cancellation. Any future retries must be limited; the current implementation does not retry automatically.
+- Validate names and paths: reject absolute paths and `..` components; keep downloads within the requested client's folder.
+- Keep local files within the configured destination and detect insufficient permissions or space.
+- Avoid simultaneous writes to the same final file. Existing ZIPs are preserved and reported as errors.
+- Clean up temporary files from failed operations without deleting complete packages belonging to other operations.
+- Report products, versions, and results without exposing credentials.
 
-## 10. Fases y criterios de aceptación
+## 10. Phases and acceptance criteria
 
-| Fase | Trabajo | Criterio de aceptación |
+| Phase | Work | Acceptance criterion |
 | --- | --- | --- |
-| 1. Contrato y comparación | Modelos, filtrado y versiones con listados de ejemplo | Distingue productos y versiones superiores, iguales e inferiores |
-| 2. Consulta HTTPS | BasicAuth, JSON y errores | Interpreta el esquema documentado; una prueba real confirma el contrato efectivo |
-| 3. Descarga y entrega | Temporal, validación y ruta local | Entrega un ZIP completo o un resultado de fallo claro; nunca presenta un parcial como listo |
-| 4. Integración | Conectar la llamada y la ruta de salida con Tytan | Tytan recibe el resultado y continúa su proceso existente |
+| 1. Contract and comparison | Models, filtering, and versions using sample listings | Correctly distinguish products and newer, equal, and older versions |
+| 2. HTTPS queries | BasicAuth, JSON, and errors | Interpret the documented schema; a live test must confirm the actual contract |
+| 3. Download and delivery | Temporary file, validation, and local path | Return a complete ZIP or a clear failure; never present a partial file as ready |
+| 4. Integration | Connect the call and output path to Tytan | Tytan receives the result and continues its existing workflow |
 
-## 11. Verificación necesaria
+The local implementation and CLI are delivered. Live contract verification and connection to Tytan's actual application remain pending.
 
-- Comparación numérica, incluidos cambios en cualquiera de los tres componentes.
-- Varios productos y varias versiones de un producto.
-- Mapeo de campos JSON en minúscula y valores nulos permitidos.
-- Listas vacías, nombres inválidos y versión de entrada inválida.
-- Autenticación rechazada, errores HTTP y respuestas que no son JSON.
-- parámetros con espacios o caracteres que requieren codificación.
-- Rutas inválidas o de otro cliente.
-- Descargas correctas, canceladas, interrumpidas y ZIP no válido.
-- Destino existente, permisos insuficientes y escrituras simultáneas.
+## 11. Required verification
 
-Se pueden probar las reglas localmente con respuestas y ZIP de ejemplo. La prueba real verifica el contrato del servidor; no requiere pruebas de carga ni pruebas de instalación de Tytan.
+- Numeric comparison, including changes to any of the three components.
+- Multiple products and multiple versions of one product.
+- Lowercase JSON field mapping and permitted null values.
+- Empty lists, invalid filenames, and invalid input versions.
+- Rejected authentication, HTTP errors, and responses that are not JSON.
+- Parameters containing spaces or characters requiring encoding.
+- Invalid paths or paths belonging to another client.
+- Successful, cancelled, and interrupted downloads, and invalid ZIPs.
+- Existing destinations, insufficient permissions, and concurrent writes.
 
-## 12. Detalles que se resolverán durante la implementación
+Rules can be tested locally with sample responses and ZIPs. Live testing verifies the server contract; it does not require load testing or Tytan installation testing.
 
-- Forma concreta de invocación y compatibilidad del proyecto .NET de Tytan.
-- Mecanismo de configuración de credenciales y destino local.
-- Respuestas reales ante errores y nombres exactos de los paquetes.
-- política ante un ZIP existente y formato del diagnóstico que consume Tytan.
+## 12. Remaining integration details
 
-Estos detalles no impiden empezar. Se parte del contrato propuesto y se ajusta al integrar y comprobar la API publicada.
+- The exact calling interface and compatibility with Tytan's .NET project.
+- How credentials and the local destination are provided in the application.
+- Actual error responses, the published endpoint path, and real package names.
+- How Tytan handles existing ZIPs and consumes diagnostic results.
+
+These details do not prevent local development. Adjust the contract during integration and verification of the published API.

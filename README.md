@@ -1,10 +1,10 @@
 # tytan-updater
 
-Módulo C# para TytanSQL que consulta actualizaciones por HTTPS, compara versiones y descarga el ZIP más reciente cuando es superior a la versión instalada. Tytan se encarga de aplicar la actualización.
+A C# module for TytanSQL that checks for updates over HTTPS, compares versions, and downloads the latest ZIP when it is newer than the installed version. Tytan handles installation.
 
-El repositorio contiene la biblioteca .NET 9, una herramienta de prueba y pruebas locales sin dependencias externas.
+The repository contains a .NET 9 library, a command-line tool, and local tests without external dependencies.
 
-## Inicio rápido
+## Quick start
 
 ```powershell
 dotnet build Tytan.Updater.sln --configuration Release
@@ -12,47 +12,47 @@ dotnet run --project tests/Tytan.Updater.Tests --configuration Release
 dotnet run --project src/Tytan.Updater.Cli -- demo ./downloads/demo
 ```
 
-La demostración genera un ZIP de ejemplo sin acceder al servidor. Consulta [docs/uso.md](docs/uso.md) para configurar credenciales, listar archivos, descargar y llamar al módulo desde Tytan.
+The demo creates a sample ZIP without contacting the server. See [Usage and integration](docs/uso.md) for credentials, listing files, downloading packages, and calling the module from Tytan.
 
-## Alcance confirmado
+## Confirmed scope
 
-- Integración con TytanSQL en C# mediante HttpClient.
-- Servidor base: `https://tytan.poznan.pl/SQLupdate/`.
-- Autenticación BasicAuth en todas las peticiones HTTPS.
-- `api.php` lista archivos y carpetas en JSON.
-- `api.php?dir=<carpeta>` lista la carpeta de un cliente.
-- `download.php?file=<ruta-relativa>` descarga un archivo.
-- Ambos endpoints ya están publicados, según confirmación del usuario.
-- Cada carpeta contiene los paquetes de los productos que tiene el cliente.
-- La carpeta, el producto y la versión instalada se reciben desde Tytan.
-- El módulo entrega la ruta local del ZIP descargado y su versión.
-- Tytan realiza la instalación y gestiona el estado de la versión instalada.
+- C# integration with TytanSQL using HttpClient.
+- Server base URL: `https://tytan.poznan.pl/SQLupdate/`.
+- BasicAuth on every HTTPS request.
+- `api.php` lists files and folders as JSON.
+- `api.php?dir=<folder>` lists a client's folder.
+- `download.php?file=<relative-path>` downloads a file.
+- The user confirms both endpoints are already published.
+- Each client's folder contains packages for the products they own.
+- Tytan supplies the client folder, product, and installed version.
+- The module returns the downloaded ZIP's local path and version.
+- Tytan installs the package and manages the installed version.
 
-## Ejemplo
+## Example
 
 ```text
-Carpeta:           Barcin_Wodbar
-Producto:          Faktury
-Versión instalada: 008.000.042
-Paquete remoto:    Faktury_008.000.043.zip
-Resultado:         ZIP descargado y ruta local devuelta a Tytan
+Client folder:     Barcin_Wodbar
+Product:           Faktury
+Installed version: 008.000.042
+Remote package:    Faktury_008.000.043.zip
+Result:            ZIP downloaded; local path returned to Tytan
 ```
 
-## Plan
+## Implementation workflow
 
-1. Definir una interfaz C# que reciba los datos de Tytan.
-2. Consultar la API y convertir el JSON en objetos.
-3. Filtrar los ZIP del producto y comparar las versiones numéricas.
-4. Descargar el paquete a un archivo temporal y publicarlo localmente al completarse.
-5. Devolver un resultado explícito: sin actualización, descargado, cancelado o error.
-6. Verificar las reglas localmente y comprobar después el contrato del servidor real.
+1. Receive Tytan's data through the C# interface.
+2. Query the API and deserialize JSON into objects.
+3. Filter ZIP packages by product and compare numeric versions.
+4. Download to a temporary file and publish it locally when complete.
+5. Return an explicit result: no update, downloaded, cancelled, or error.
+6. Verify the rules locally, then check the actual server contract.
 
-Se utilizará el entorno .NET disponible, ajustando la compatibilidad al proyecto de Tytan durante la integración. La elección de versión no bloquea el inicio.
+The library targets the available .NET 9 environment. Compatibility with Tytan's application must be checked during integration.
 
-El contrato, los endpoints y las reglas están en [docs/planteamiento.md](docs/planteamiento.md). Los entregables y commits de cada fase están en [docs/fases.md](docs/fases.md).
+See [Technical design](docs/planteamiento.md) for the contract, endpoints, and rules, and [Implementation phases](docs/fases.md) for deliverables and commits.
 
-## Fuentes y estado
+## Sources and status
 
-Documentos revisados en `F:\SQL_Update`: proyecto v1.0, proyecto v1.1, guía de integración HTTPS + BasicAuth y su copia de seguridad. Alcance actualizado con las confirmaciones del usuario del 5 de octubre de 2026.
+The documents reviewed in `F:\SQL_Update` include project v1.0, project v1.1, the HTTPS + BasicAuth integration guide, and its backup. The scope reflects the user's confirmations on October 5, 2026.
 
-La publicación de los endpoints está confirmada por el usuario. La consulta real a `api.php?dir=Barcin_Wodbar` del 5 de octubre respondió HTTP 404; hay que contrastar la ruta publicada. Véase [docs/verificacion.md](docs/verificacion.md). Las credenciales se configuran fuera del repositorio.
+The user confirms the endpoints are published. The live request to `api.php?dir=Barcin_Wodbar` on October 5 returned HTTP 404, so the published path still needs to be checked. See [Verification record](docs/verificacion.md). Credentials are configured outside the repository.

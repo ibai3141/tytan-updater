@@ -1,21 +1,23 @@
-# Plan de implementación por fases
+# Implementation phases
 
-Cada fase termina con compilación, las comprobaciones que correspondan y un commit en español. El usuario realiza el push.
+Each phase ends with a build, appropriate checks, and a commit in Spanish, as requested by the user. The user handles pushing to the remote repository.
 
-| Fase | Entregable | Comprobación | Commit previsto |
+| Phase | Deliverable | Verification | Completed commit |
 | --- | --- | --- | --- |
-| 1. Base y versiones | Biblioteca C#, modelos y selección numérica por producto | Versiones inválidas, distintos productos y selección por versión | `Crear la base del módulo y la comparación de versiones` |
-| 2. Consulta HTTPS | Cliente API con BasicAuth y JSON | Peticiones, campos, rutas y errores HTTP con servidor simulado | `Añadir la consulta HTTPS de actualizaciones` |
-| 3. Descarga | ZIP temporal, validación y resultado para Tytan | ZIP real de prueba, interrupciones, cancelación y destinos existentes | `Implementar la descarga y entrega de paquetes` |
-| 4. Uso e integración | Herramienta de prueba y ejemplo de llamada C# | Ejecución local completa y documentación de uso | `Documentar la integración y añadir la herramienta de prueba` |
+| 1. Foundation and versions | C# library, models, and numeric package selection by product | Invalid versions, different products, and version-based selection | `63ec306` |
+| 2. HTTPS queries | API client with BasicAuth and JSON | Requests, fields, paths, and HTTP errors using a simulated server | `ea281cd` |
+| 3. Downloads | Temporary ZIP, validation, and result returned to Tytan | Sample ZIP, interruptions, cancellation, and existing destinations | `63d7037` |
+| 4. Usage and integration | CLI tool and C# integration example | Complete local execution and usage documentation | `585b658` |
 
-Se comienza con .NET 9, disponible en el equipo, y sin dependencias externas. Las pruebas son un ejecutable local que devuelve un código distinto de cero si falla algún caso. No necesitan acceder al servidor de producción.
+The implementation uses .NET 9, available on the development machine, without external dependencies. Tests run as a local executable that returns a nonzero exit code if any case fails. They do not need access to the production server.
 
-La integración con el código de Tytan se entrega como ejemplo y contrato: su aplicación no está en este repositorio. La comprobación real de los endpoints se registrará por separado de las pruebas locales; no se dará por realizada si no se ejecuta.
+Integration with Tytan is provided as an example and a contract: its application is not in this repository. Live endpoint verification is recorded separately from local tests and is only claimed when actually performed.
 
-## Entregables realizados
+## Delivered work
 
-- Fase 1: biblioteca, modelos, comparación numérica y selección por producto.
-- Fase 2: consulta HTTPS y pruebas de autenticación, JSON y errores. La consulta real obtuvo HTTP 404; véase [verificacion.md](verificacion.md).
-- Fase 3: descarga temporal, comprobación de tamaño y lectura del ZIP, entrega a Tytan y pruebas de fallos y concurrencia.
-- Fase 4: herramienta con comandos `list`, `download` y `demo`, instrucciones de uso y ejemplo de integración. La conexión con el código real de Tytan sigue pendiente en su aplicación.
+- Phase 1: library, models, numeric version comparison, and product selection.
+- Phase 2: HTTPS queries and tests for authentication, JSON, and errors. The live request returned HTTP 404; see [Verification record](verificacion.md).
+- Phase 3: temporary downloads, size and ZIP readability checks, delivery to Tytan, and failure and concurrency tests.
+- Phase 4: CLI commands `list`, `download`, and `demo`, usage instructions, and an integration example. Connecting the module to Tytan's actual application remains pending in its project.
+
+Console help and application-defined result messages were subsequently translated into English in commit `bec6b20`.

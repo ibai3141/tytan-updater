@@ -1,31 +1,31 @@
-# Uso y conexión con Tytan
+# Usage and integration with Tytan
 
-## Compilar y ejecutar las pruebas
+## Build and run tests
 
-Desde la raíz del repositorio, con el SDK .NET 9 instalado:
+From the repository root, with the .NET 9 SDK installed:
 
 ```powershell
 dotnet build Tytan.Updater.sln --configuration Release
 dotnet run --project tests/Tytan.Updater.Tests --configuration Release
 ```
 
-Las pruebas son un ejecutable sin dependencias externas. Imprimen cada caso y devuelven código 0 si pasan todos, o 1 si falla alguno. No se ejecutan mediante `dotnet test`.
+Tests are an executable without external dependencies. They print each case and return exit code 0 if all pass, or 1 if any fail. They are not run using `dotnet test`.
 
-## Demostración local
+## Local demo
 
 ```powershell
 dotnet run --project src/Tytan.Updater.Cli -- demo ./downloads/demo
 ```
 
-Simula el listado y la descarga en memoria; no contacta con el servidor. Genera `Demo_001.000.002.zip`, con un texto de ejemplo, y devuelve un resultado `Downloaded`. No es una actualización real de Tytan. Al repetir el comando en el mismo destino, el módulo comunica que el archivo ya existe y lo conserva.
+The demo simulates listing and downloading in memory without contacting the server. It generates `Demo_001.000.002.zip` containing sample text and returns `Downloaded`. This is not a real Tytan update. Repeating the command with the same destination reports that the file already exists and preserves it.
 
-## Acceso al servidor
+## Server access
 
-Proporcionar las credenciales para la sesión de PowerShell, sin escribirlas en el código o en el historial:
+Provide credentials for the PowerShell session without writing them into code or command history:
 
 ```powershell
-$env:TYTAN_USERNAME = Read-Host 'Usuario'
-$env:TYTAN_PASSWORD = [System.Net.NetworkCredential]::new('', (Read-Host 'Contraseña' -AsSecureString)).Password
+$env:TYTAN_USERNAME = Read-Host 'Username'
+$env:TYTAN_PASSWORD = [System.Net.NetworkCredential]::new('', (Read-Host 'Password' -AsSecureString)).Password
 $env:TYTAN_BASE_URL = 'https://tytan.poznan.pl/SQLupdate/'
 
 dotnet run --project src/Tytan.Updater.Cli -- list Barcin_Wodbar
@@ -34,20 +34,29 @@ dotnet run --project src/Tytan.Updater.Cli -- download Barcin_Wodbar Faktury 008
 Remove-Item Env:TYTAN_USERNAME, Env:TYTAN_PASSWORD
 ```
 
-Las variables de entorno son una opción para esta herramienta de prueba; la aplicación Tytan puede proporcionar las credenciales mediante su configuración. `TYTAN_BASE_URL` permite utilizar la ruta real si difiere de la documentación.
+Environment variables are an option for this CLI; Tytan can supply credentials through its own configuration. `TYTAN_BASE_URL` allows a different published path if the actual address differs from the documents.
 
-La consulta real del 5 de octubre respondió HTTP 404 en la dirección documentada. Véase [verificacion.md](verificacion.md). Antes de esperar una descarga real, contrastar esa ruta; las pruebas locales no validan la publicación del servidor.
+The live query on October 5 returned HTTP 404 at the documented address. See [Verification record](verificacion.md). Check that path before expecting a live download; local tests do not validate server publication.
 
-El comando `list` no descarga archivos. `download` consulta y descarga únicamente si hay una versión superior del producto. Ctrl+C cancela. Código de salida: 0 para éxito o ausencia de actualización, 1 para error de operación, 2 para argumentos/configuración no válidos y 130 para cancelación solicitada. La salida JSON del comando de descarga incluye el estado; una descarga fallida puede devolver 1 aunque su causa sea una entrada inválida, porque se comunica como `UpdateResult.Error`.
+`list` does not download files. `download` checks and downloads only if a newer version of the product is available. Press Ctrl+C to cancel. Exit codes:
 
-## Llamada desde TytanSQL
+| Code | Meaning |
+| --- | --- |
+| 0 | Success or no update available |
+| 1 | Operation failed |
+| 2 | Invalid arguments or configuration |
+| 130 | User-requested cancellation |
 
-Añadir una referencia a `src/Tytan.Updater/Tytan.Updater.csproj` desde el proyecto compatible de Tytan, o distribuir la biblioteca compilada. Este ejemplo ilustra el contrato; sustituir las variables por los datos que ya tiene la aplicación:
+The download command's JSON includes its status. A failed download can return exit code 1 even when caused by invalid input, because the service reports it as `UpdateResult.Error`.
+
+## Calling the module from TytanSQL
+
+Reference `src/Tytan.Updater/Tytan.Updater.csproj` from Tytan's compatible project, or distribute the compiled library. This example illustrates the contract; replace the variables with values already known to the application:
 
 ```csharp
 using Tytan.Updater;
 
-// Reutilizar el cliente durante la vida del componente y disponerlo al terminar.
+// Reuse the client for the component's lifetime and dispose it when finished.
 using var api = new UpdateApiClient(
     new Uri("https://tytan.poznan.pl/SQLupdate/"),
     usernameFromConfiguration,
@@ -61,38 +70,38 @@ var result = await service.CheckAndDownloadAsync(
 switch (result.Status)
 {
     case UpdateStatus.Downloaded:
-        // Entregar result.LocalPath y result.AvailableVersion al flujo existente de Tytan.
-        // Solo Tytan aplica el ZIP y actualiza su registro de versión instalada.
+        // Pass result.LocalPath and result.AvailableVersion to Tytan's existing workflow.
+        // Only Tytan applies the ZIP and updates its installed-version record.
         break;
     case UpdateStatus.NoUpdate:
-        // Continuar sin instalar. Message distingue ausencia de paquete y versión no superior.
+        // Continue without installing. Message distinguishes no package from no newer version.
         break;
     case UpdateStatus.Cancelled:
     case UpdateStatus.Error:
-        // Mostrar o registrar result.Message.
+        // Display or log result.Message.
         break;
 }
 ```
 
-`UpdateApiClient.ListAsync()` permite listar la raíz; `ListAsync(clientFolder)` consulta una carpeta. `UpdateService` coordina la selección y descarga. La versión instalada se entrega como cadena de tres componentes numéricos.
+`UpdateApiClient.ListAsync()` lists the root; `ListAsync(clientFolder)` queries one folder. `UpdateService` coordinates selection and downloading. Supply the installed version as a string with three numeric components.
 
-## Política de archivos y límites
+## File policy and limits
 
-- El producto y la carpeta deben coincidir con los nombres del servidor; la selección distingue mayúsculas y minúsculas en el prefijo.
-- Se admiten carpetas de cliente de un solo nivel, como las de los documentos.
-- Los archivos existentes no se reutilizan ni se sobrescriben automáticamente. Tytan decide si corresponde moverlos o eliminarlos antes de otra descarga.
-- Las descargas se escriben en un temporal propio y se publican mediante un movimiento en la misma carpeta, sin reemplazar archivos.
-- Se valida el tamaño cuando existe y se comprueba que el ZIP pueda leerse y descomprimirse a un flujo descartado. No se extrae en disco ni se verifica una firma o hash: la API no los ofrece.
-- El tiempo de espera predeterminado es de dos minutos por operación de listado o descarga, incluyendo lectura y validación. Puede configurarse en el constructor del cliente.
-- El cliente no sigue redirecciones. Un handler de prueba inyectado debe conservar ese comportamiento. No hay reintentos automáticos.
-- Si el sistema impide borrar un temporal después de un fallo, puede quedar un `.tytan-*.part`; nunca se entrega como ZIP listo.
-- La compatibilidad con la aplicación real de Tytan y la instalación se validan en su proyecto. Esta biblioteca utiliza actualmente `net9.0`.
+- Product and folder names must match the server's names; product prefix matching is case-sensitive.
+- Client folders have a single level, as in the documents.
+- Existing files are neither reused nor overwritten automatically. Tytan decides whether to move or delete them before another download.
+- Downloads use their own temporary file and are published by moving it within the same folder without replacing an existing file.
+- The module checks size when available and confirms that the ZIP can be read and decompressed into a discarded stream. It does not extract files to disk or verify a signature or hash; the documented API provides neither.
+- The default timeout is two minutes per listing or download operation, including reading and validation. It can be configured in the client constructor.
+- The client does not follow redirects. An injected test handler must preserve this behavior. There are no automatic retries.
+- If the operating system prevents cleanup after a failure, a `.tytan-*.part` file can remain; it is never returned as a ready ZIP.
+- Compatibility with Tytan's actual application and installation must be validated in its project. The library currently targets `net9.0`.
 
-## Estructura del repositorio
+## Repository structure
 
 ```text
-src/Tytan.Updater/        Biblioteca C#
-src/Tytan.Updater.Cli/    Herramienta de prueba y demostración
-tests/Tytan.Updater.Tests/ Pruebas locales sin servidor real
-docs/                    Requisitos, fases, uso y verificación
+src/Tytan.Updater/         C# library
+src/Tytan.Updater.Cli/     CLI tool and demo
+tests/Tytan.Updater.Tests/ Local tests without a live server
+docs/                     Requirements, phases, usage, and verification
 ```
