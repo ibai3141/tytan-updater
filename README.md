@@ -1,8 +1,18 @@
 # tytan-updater
 
-módulo C# para TytanSQL que consulta actualizaciones por HTTPS, compara versiones y descarga el ZIP más reciente cuando es superior a la versión instalada. Tytan se encarga de aplicar la actualización.
+Módulo C# para TytanSQL que consulta actualizaciones por HTTPS, compara versiones y descarga el ZIP más reciente cuando es superior a la versión instalada. Tytan se encarga de aplicar la actualización.
 
-El repositorio contiene documentación. Ya hay información suficiente para comenzar la implementación del módulo de consulta y descarga.
+El repositorio contiene la biblioteca .NET 9, una herramienta de prueba y pruebas locales sin dependencias externas.
+
+## Inicio rápido
+
+```powershell
+dotnet build Tytan.Updater.sln --configuration Release
+dotnet run --project tests/Tytan.Updater.Tests --configuration Release
+dotnet run --project src/Tytan.Updater.Cli -- demo ./downloads/demo
+```
+
+La demostración genera un ZIP de ejemplo sin acceder al servidor. Consulta [docs/uso.md](docs/uso.md) para configurar credenciales, listar archivos, descargar y llamar al módulo desde Tytan.
 
 ## Alcance confirmado
 
@@ -39,10 +49,10 @@ Resultado:         ZIP descargado y ruta local devuelta a Tytan
 
 Se utilizará el entorno .NET disponible, ajustando la compatibilidad al proyecto de Tytan durante la integración. La elección de versión no bloquea el inicio.
 
-El contrato, los endpoints, las reglas y las pruebas están en [docs/planteamiento.md](docs/planteamiento.md).
+El contrato, los endpoints y las reglas están en [docs/planteamiento.md](docs/planteamiento.md). Los entregables y commits de cada fase están en [docs/fases.md](docs/fases.md).
 
 ## Fuentes y estado
 
 Documentos revisados en `F:\SQL_Update`: proyecto v1.0, proyecto v1.1, guía de integración HTTPS + BasicAuth y su copia de seguridad. Alcance actualizado con las confirmaciones del usuario del 5 de octubre de 2026.
 
-La publicación de los endpoints está confirmada por el usuario; su respuesta todavía no se ha verificado desde este proyecto. Las credenciales de los documentos se configurarán fuera del repositorio.
+La publicación de los endpoints está confirmada por el usuario. La consulta real a `api.php?dir=Barcin_Wodbar` del 5 de octubre respondió HTTP 404; hay que contrastar la ruta publicada. Véase [docs/verificacion.md](docs/verificacion.md). Las credenciales se configuran fuera del repositorio.

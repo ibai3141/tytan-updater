@@ -22,7 +22,7 @@ Hay información suficiente para empezar: lenguaje, autenticación, endpoints, l
 
 Los originales están en `F:\SQL_Update`. El archivo `.~lock.…docx#` es temporal. Las credenciales no se copian al repositorio.
 
-La publicación de los endpoints está confirmada por el usuario. Su respuesta real todavía no se ha comprobado desde el proyecto. Los ejemplos de esta documentación describen la guía, no respuestas capturadas del servidor.
+La publicación de los endpoints está confirmada por el usuario. La consulta real del 5 de octubre a `api.php?dir=Barcin_Wodbar` devolvió HTTP 404: véase [verificacion.md](verificacion.md). Los ejemplos siguientes describen la guía, no respuestas capturadas del servidor. La biblioteca y la herramienta de prueba están implementadas; el uso está en [uso.md](uso.md).
 
 ## 3. Reparto de responsabilidades
 
