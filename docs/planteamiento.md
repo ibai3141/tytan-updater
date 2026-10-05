@@ -1,201 +1,221 @@
-# Planteamiento del actualizador
+# Consulta y descarga de actualizaciones de TytanSQL
 
-## 1. Qué se quiere conseguir
+Actualizado: 5 de octubre de 2026.
 
-Cuando un cliente tenga una versión anterior a la disponible para su programa o módulo, el sistema debe detectarlo y actualizarlo.
+## 1. Objetivo y alcance
 
-Ejemplo:
+Implementar un módulo C# que TytanSQL pueda llamar para consultar la carpeta de un cliente, detectar una versión superior de un producto y descargar su ZIP a una carpeta local.
 
-```text
-Cliente:          Barcin_Wodbar
-Módulo:           Faktury
-Versión instalada: 008.000.042
-Versión disponible: 008.000.043
-Acción esperada: descargar el paquete y aplicar la actualización.
+Tytan aplica el paquete y gestiona la versión instalada. Nuestro módulo termina al entregar el archivo completo y su resultado. No necesita inspeccionar la instalación, extraer paquetes, sustituir ejecutables, ejecutar SQL ni implementar copias de seguridad o recuperación de la instalación.
+
+Hay información suficiente para empezar: lenguaje, autenticación, endpoints, listado JSON y regla de comparación están descritos. Una interfaz de entrada y salida permite desarrollar y probar el módulo sin necesitar el código completo de Tytan.
+
+## 2. Fuentes y confirmaciones
+
+| Fuente | Información |
+| --- | --- |
+| `SQl_Update_Projekt_v_1.0.docx` | Carpeta por cliente, versión guardada en la aplicación y descarga de una versión superior |
+| `SQl_Update_Projekt_v_1.1.docx` | La carpeta contiene ZIP de las últimas versiones de todos los productos del cliente |
+| `Connect to your SQLupdate directory on the Idea server.docx` | C#, HttpClient, BasicAuth, listado JSON y descarga; ejemplos de cliente y servidor |
+| `Kopia zapasowa … .wbk` | Copia más corta de la guía, sin requisitos adicionales |
+| Usuario, 05/10/2026 | API y descarga ya publicadas; utilizar el entorno disponible; Tytan se encarga del proceso posterior |
+
+Los originales están en `F:\SQL_Update`. El archivo `.~lock.…docx#` es temporal. Las credenciales no se copian al repositorio.
+
+La publicación de los endpoints está confirmada por el usuario. Su respuesta real todavía no se ha comprobado desde el proyecto. Los ejemplos de esta documentación describen la guía, no respuestas capturadas del servidor.
+
+## 3. Reparto de responsabilidades
+
+| TytanSQL | módulo de este repositorio |
+| --- | --- |
+| Proporcionar carpeta, producto y versión instalada | Consultar la carpeta y comparar versiones del producto |
+| Facilitar configuración de acceso y destino local | Autenticarse, descargar y guardar un paquete completo |
+| Decidir cuándo comprobar actualizaciones | Comunicar ausencia de actualización, descarga, cancelación o error |
+| Instalar el paquete y registrar la versión instalada | Entregar ruta local y versión del paquete descargado |
+
+## 4. API publicada
+
+Dirección base: `https://tytan.poznan.pl/SQLupdate/`.
+
+Todas las peticiones requieren HTTPS y BasicAuth. Configurar HttpClient con credenciales recibidas desde configuración externa. No incrustarlas en código, URL, ejemplos o registros.
+
+### Listar
+
+```http
+GET /SQLupdate/api.php
+GET /SQLupdate/api.php?dir=Barcin_Wodbar
 ```
 
-Si las versiones coinciden o el servidor ofrece una versión inferior, no se actualizará. No se plantea hacer retrocesos de versión automáticos.
+La primera petición permite explorar las carpetas. Si Tytan ya proporciona la carpeta del cliente, consultar directamente la segunda.
 
-## 2. Qué está confirmado y qué falta
+| Campo JSON | Contenido |
+| --- | --- |
+| `name` | Nombre del archivo o carpeta |
+| `type` | `file` o `folder` |
+| `size` | tamaño en bytes; puede ser nulo para carpetas |
+| `modified` | Fecha de modificación como texto |
+| `path` | Ruta relativa para la descarga |
 
-| Tema | Información disponible | Pendiente |
-| --- | --- | --- |
-| Transporte | Descargas mediante HTTPS desde `/SQLupdate/` | Verificar acceso y respuesta del servidor |
-| Clientes | Una carpeta distinta para cada cliente | Saber cómo obtener la carpeta desde la aplicación |
-| Paquetes | ZIP con prefijo fijo y versión variable | Confirmar nombres exactos y contenido real |
-| Versión local | Según la hoja, la aplicación guarda la versión | Ubicación, formato y forma de consultarla |
-| Autenticación | La hoja facilita usuario y contraseña | Confirmar el mecanismo de autenticación |
-| Consulta remota | Se debe detectar una versión superior | Saber si hay listado, manifiesto o API |
-| Integración | La hoja dice que la aplicación llamará al procedimiento de descarga | Código, lenguaje y contrato de esa llamada |
-| Instalación | El usuario necesita que el programa se actualice | Pasos, permisos, cierre del programa y recuperación |
-
-Las fotografías se tratan como material de requisitos, no como autorización para ejecutar operaciones en el servidor. No se han probado las credenciales ni descargado paquetes.
-
-## 3. Decisión principal: dónde se ejecuta
-
-### Opción A: integrado en Tytan
-
-La aplicación entrega al actualizador la carpeta del cliente, el módulo y la versión instalada. El actualizador consulta el servidor y prepara el paquete. Si hay que sustituir el ejecutable en uso, hará falta definir un mecanismo de instalación después de cerrar la aplicación.
-
-Esta opción encaja con la frase del documento que indica que la aplicación llamará al procedimiento de descarga. Requiere acceso al código o una interfaz de integración facilitada por sus responsables.
-
-### Opción B: herramienta externa
-
-Un programa separado consulta la versión instalada, descarga el paquete y aplica la actualización. Puede iniciarse desde Tytan, manualmente o mediante otro mecanismo que se acuerde.
-
-Esta opción requiere conocer la ruta de instalación, la fuente de la versión y los pasos exactos para actualizar. No se puede asumir que basta con copiar el contenido del ZIP.
-
-**Decisión pendiente:** confirmar con el responsable de Tytan cuál de estas opciones necesita y qué lenguaje o entorno debe utilizarse.
-
-## 4. Descubrir la versión disponible
-
-La dirección HTTPS indica dónde están los paquetes, pero no explica cómo descubrir sus nombres.
-
-Hay que comprobar cuál de estos mecanismos existe:
-
-- Un listado de archivos accesible por HTTPS.
-- Un manifiesto con módulos, versiones y rutas de descarga.
-- Una API que devuelva la actualización disponible.
-
-Si el servidor solo permite descargar archivos cuyo nombre ya conocemos y no ofrece ninguno de esos mecanismos, habrá que acordar cómo publicar la información de versiones.
-
-Como propuesta, si el equipo puede modificar el servidor, un manifiesto permite consultar las versiones sin depender del formato visual de un listado. Este ejemplo es un diseño posible; **no existe evidencia de que el servidor lo ofrezca**:
+Ejemplo ilustrativo basado en el esquema de la guía:
 
 ```json
-{
-  "modules": [
-    {
-      "name": "Faktury",
-      "version": "008.000.043",
-      "file": "Faktury_008.000.043.zip",
-      "sha256": "<hash del ZIP publicado por el responsable>"
-    }
-  ]
-}
+[
+  {
+    "name": "Faktury_008.000.043.zip",
+    "type": "file",
+    "size": 17492992,
+    "modified": "2026-09-29 09:15:00",
+    "path": "Barcin_Wodbar/Faktury_008.000.043.zip"
+  }
+]
 ```
 
-No implementar un lector de manifiestos ni un analizador de listados hasta confirmar el mecanismo real.
+Mapear expresamente los campos JSON en minúscula a las propiedades C#, o configurar la deserialización para admitir diferencias entre mayúsculas y minúsculas. La guía muestra propiedades como `Name`, mientras que su PHP devuelve `name`.
 
-## 5. Comparación de versiones
+### Descargar
 
-La versión se comparará por sus componentes numéricos, después de validar el formato acordado.
-
-```text
-008.000.043 → (8, 0, 43)
-008.002.066 → (8, 2, 66)
+```http
+GET /SQLupdate/download.php?file=Barcin_Wodbar/Faktury_008.000.043.zip
 ```
 
-Se compara primero el primer componente; en caso de empate, el segundo, y después el tercero. Evitar comparar el nombre completo del archivo como texto.
+Utilizar el campo `path` del archivo seleccionado y codificar los valores de los parámetros de consulta. Mantener las peticiones en la dirección base configurada.
 
-La comparación se hace entre versiones del mismo módulo. `Faktury`, `FK2025` y `FK2026` aparecen como prefijos diferentes y deben tratarse por separado hasta confirmar su significado.
+El PHP documentado devuelve el contenido binario con tipo `application/octet-stream`, nombre de descarga y tamaño. No hay que desarrollar ni publicar PHP en este proyecto.
 
-Si hay varios paquetes de un módulo, la regla propuesta es seleccionar la versión más alta aplicable al cliente. Antes de hacerlo, confirmar si los ZIP son completos o si necesitan instalar versiones intermedias.
+## 5. Contrato propuesto con Tytan
 
-## 6. Flujo propuesto
+Los documentos no fijan firmas de métodos; este contrato es una propuesta para la implementación.
 
-```text
-Leer configuración del cliente y versión instalada
-    ↓
-Consultar información de actualizaciones por HTTPS
-    ↓
-Seleccionar módulo y versión aplicable
-    ↓
-Comparar con la versión instalada
-    ├─ Igual o inferior → terminar sin actualizar
-    └─ Superior
-         ↓
-       Descargar a un archivo temporal
-         ↓
-       Validar el paquete
-         ↓
-       Preparar la instalación
-         ↓
-       Aplicar el procedimiento definido para Tytan
-         ↓
-       Comprobar el resultado
-         ↓
-       Registrar la nueva versión
-```
+Entradas:
 
-No actualizar la versión guardada solo por haber descargado el ZIP. Debe reflejar una instalación completada correctamente.
+- Dirección base y credenciales desde configuración externa.
+- Carpeta del cliente, por ejemplo `Barcin_Wodbar`.
+- Producto o prefijo fijo, por ejemplo `Faktury`.
+- Versión instalada, por ejemplo `008.000.042`.
+- Carpeta local de destino.
+- Posibilidad de cancelar la operación.
 
-## 7. Responsabilidades del código
+La versión llega como dato de entrada. No buscamos por nuestra cuenta en el registro, bases de datos o archivos de instalación.
 
-Separación propuesta, independiente del lenguaje que se elija:
-
-| Componente | Responsabilidad |
+| Resultado | Información devuelta |
 | --- | --- |
-| Configuración | Dirección base, carpeta del cliente, módulos y rutas locales |
-| Detección local | Obtener la versión instalada de una fuente acordada |
-| Consulta remota | Autenticarse y obtener versiones y archivos disponibles |
-| Comparación | Decidir si hay una actualización aplicable |
-| Descarga | Obtener el ZIP, gestionar interrupciones y dejar un archivo completo |
-| Validación | Comprobar que el paquete se puede leer y verificar el hash si se publica |
-| Instalación | Ejecutar los pasos específicos de Tytan y gestionar fallos |
-| Registro | Mostrar el resultado y guardar información útil de diagnóstico |
+| Sin actualización | Producto, versión instalada y versión disponible si existe |
+| Descargado | Producto, versión disponible y ruta local del ZIP completo |
+| Error | Motivo útil para Tytan; ninguna ruta presentada como descarga válida |
+| Cancelado | Operación interrumpida sin entregar un paquete parcial |
 
-Las credenciales deben suministrarse fuera del repositorio mediante el mecanismo que se acuerde. No incluirlas en ejemplos, registros ni direcciones URL.
+Si no existe un paquete del producto, indicar expresamente que no hay paquete disponible. Un fallo de acceso o JSON inválido es un error, no ausencia de actualización.
 
-## 8. Requisitos de instalación pendientes
+El módulo informa de una versión descargada, no instalada. Tytan registra la versión después de aplicar el ZIP.
 
-Antes de programar la instalación, obtener respuestas a estas preguntas:
+## 6. Selección y comparación de versiones
 
-1. ¿El ZIP contiene ejecutables, un instalador, scripts SQL u otros archivos?
-2. ¿La actualización modifica una base de datos o únicamente archivos del programa?
-3. ¿Dónde se instala cada módulo y qué permisos necesita?
-4. ¿Debe cerrarse el programa? ¿Hay varios usuarios o equipos usando la misma instalación?
-5. ¿Se puede instalar directamente la última versión o hay pasos intermedios?
-6. ¿Qué copia de seguridad hace falta y cómo se recupera una instalación fallida?
-7. ¿Cómo se verifica que la actualización terminó correctamente?
-8. ¿Cómo se guarda o consulta la versión después de instalar?
+Los documentos muestran estos nombres, con extensión ZIP oculta en las capturas:
 
-Si hay cambios en base de datos, restaurar archivos no basta para deshacer la actualización. El procedimiento de recuperación debe definirlo el responsable del producto.
+```text
+Faktury_008.000.043.zip
+FK2025_005.005.007.zip
+FK2026_005.005.040.zip
+```
 
-## 9. Fases y criterios de aceptación
+Regla inicial: `<producto>_<versión>.zip`, con tres componentes numéricos separados por puntos.
 
-### Fase 0: obtener información y ejemplos
+1. Conservar entradas de tipo `file` y paquetes ZIP.
+2. Filtrar por el producto solicitado, incluyendo el separador `_` para evitar coincidencias con otros productos.
+3. Extraer y validar la versión.
+4. Comparar sus componentes como números.
+5. Seleccionar la versión más alta del mismo producto.
+6. Descargarla únicamente si es superior a la instalada.
 
-Recibir una instalación de prueba, un ZIP de actualización y la información de integración. Verificar cómo responde el servidor y cómo se obtiene la versión local.
+```text
+008.000.043 -> (8, 0, 43)
+008.002.066 -> (8, 2, 66)
+(8, 2, 66) > (8, 0, 43)
+```
 
-**Resultado:** se puede documentar un caso real de principio a fin y decidir el lenguaje y la forma de integración.
+Versiones iguales o inferiores no provocan descarga. Cada producto se compara por separado. Ignorar nombres que no cumplen el patrón con un diagnóstico; una versión de entrada inválida es un error.
 
-### Fase 1: comprobar versiones
+La fecha `modified` es informativa. Aunque la guía ordena por fecha en un ejemplo, el requisito pide comparar versiones: copiar un paquete recientemente no lo convierte en una versión superior.
 
-Implementar la lectura de la versión local, la consulta remota y la comparación. Mostrar la versión instalada, la disponible y si hay una actualización.
+El requisito es obtener el paquete más reciente. Las reglas de instalación y cualquier necesidad de pasos intermedios corresponden a Tytan.
 
-**Resultado:** identifica correctamente versiones superiores, iguales e inferiores, por cliente y módulo, sin modificar la instalación.
+## 7. Flujo
 
-### Fase 2: descargar y validar
+```text
+Recibir carpeta, producto, versión y destino desde Tytan
+    |
+Validar entradas y preparar HttpClient con BasicAuth
+    |
+Consultar api.php?dir=<carpeta>
+    |
+Deserializar y seleccionar el ZIP de mayor versión del producto
+    |
+Comparar con la versión instalada
+    +-- Sin paquete o versión igual/inferior -> devolver sin actualización
+    +-- Superior
+         |
+       Descargar con download.php?file=<path> a un archivo temporal
+         |
+       Comprobar descarga completa y legibilidad del ZIP
+         |
+       Publicar el archivo en el destino local
+         |
+       Devolver ruta y versión a Tytan
+```
 
-Descargar el paquete elegido a una ubicación temporal y validarlo. Definir tiempos de espera y reintentos limitados para evitar bucles continuos de descargas.
+Descargar por flujo para no cargar todo el archivo en memoria. Un parcial no ocupa el nombre final ni se devuelve como paquete listo. Comprobar el tamaño si está disponible y que el ZIP se puede abrir sin extraerlo. La API documentada no ofrece un hash; no asumir verificación criptográfica del paquete.
 
-**Resultado:** entrega un ZIP completo o un error claro; una descarga interrumpida no se presenta como una actualización lista.
+## 8. Organización propuesta
 
-### Fase 3: instalar
+| Componente C# | Responsabilidad |
+| --- | --- |
+| Configuración | Servidor, autenticación y opciones de conexión |
+| Cliente API | HTTPS, lectura JSON y descarga |
+| Modelo de entrada remota | Campos `name`, `type`, `size`, `modified`, `path` |
+| Comparador de versiones | Interpretación numérica y selección por producto |
+| Servicio de actualización | Coordinación de consulta, comparación y descarga |
+| Modelos de entrada y resultado | Contrato para la llamada desde Tytan |
 
-Implementar el procedimiento aprobado para Tytan, incluyendo cierre del programa, copias de seguridad y recuperación cuando corresponda.
+Usar el entorno .NET disponible y ajustar compatibilidad durante la integración. Un ejecutable de prueba puede comprobar el módulo sin la aplicación completa; el entregable es el módulo invocable desde Tytan.
 
-**Resultado:** actualiza una instalación de prueba y registra la versión únicamente tras comprobar el éxito. Un fallo deja un estado conocido y recuperable.
+## 9. Errores y manejo de archivos
 
-### Fase 4: probar el uso con varios clientes
+- Distinguir autenticación rechazada, carpeta o archivo ausente, error del servidor, JSON inválido y fallo de conexión.
+- Gestionar tiempos de espera y cancelación; cualquier reintento será limitado.
+- Validar nombres y rutas: rechazar rutas absolutas y componentes `..`; mantener la descarga en la carpeta del cliente solicitado.
+- Mantener los archivos locales dentro del destino configurado; detectar permisos insuficientes y falta de espacio.
+- Evitar escrituras simultáneas al mismo archivo y definir qué hacer si el ZIP ya existe.
+- Limpiar temporales de operaciones fallidas sin borrar paquetes completos ajenos a ellas.
+- Registrar producto, versiones y resultado sin credenciales.
 
-Comprobar que cada cliente consulta los paquetes que le corresponden y evaluar el comportamiento de descargas simultáneas en un entorno acordado.
+## 10. Fases y criterios de aceptación
 
-**Resultado:** funcionamiento validado y medidas reales del consumo de red. Si sigue existiendo saturación, evaluar distribución de las comprobaciones y mejoras de capacidad o caché junto al equipo del servidor.
+| Fase | Trabajo | Criterio de aceptación |
+| --- | --- | --- |
+| 1. Contrato y comparación | Modelos, filtrado y versiones con listados de ejemplo | Distingue productos y versiones superiores, iguales e inferiores |
+| 2. Consulta HTTPS | BasicAuth, JSON y errores | Interpreta el esquema documentado; una prueba real confirma el contrato efectivo |
+| 3. Descarga y entrega | Temporal, validación y ruta local | Entrega un ZIP completo o un resultado de fallo claro; nunca presenta un parcial como listo |
+| 4. Integración | Conectar la llamada y la ruta de salida con Tytan | Tytan recibe el resultado y continúa su proceso existente |
 
-## 10. Casos de validación necesarios
+## 11. Verificación necesaria
 
-- Versión remota superior, igual e inferior a la instalada.
-- Varios módulos y varios paquetes del mismo módulo.
-- Formato de versión inválido o información remota incompleta.
-- Credenciales rechazadas, carpeta ausente y servidor inaccesible.
-- Descarga interrumpida, ZIP dañado y falta de espacio.
-- Programa en uso o permisos insuficientes durante la instalación.
-- Fallo de instalación y ejecución del procedimiento de recuperación.
-- Dos intentos de actualización simultáneos en la misma instalación.
+- Comparación numérica, incluidos cambios en cualquiera de los tres componentes.
+- Varios productos y varias versiones de un producto.
+- Mapeo de campos JSON en minúscula y valores nulos permitidos.
+- Listas vacías, nombres inválidos y versión de entrada inválida.
+- Autenticación rechazada, errores HTTP y respuestas que no son JSON.
+- parámetros con espacios o caracteres que requieren codificación.
+- Rutas inválidas o de otro cliente.
+- Descargas correctas, canceladas, interrumpidas y ZIP no válido.
+- Destino existente, permisos insuficientes y escrituras simultáneas.
 
-Las pruebas se harán con archivos de ejemplo y una instalación de prueba. No realizar pruebas de carga sobre el servidor real sin acordarlas con sus responsables.
+Se pueden probar las reglas localmente con respuestas y ZIP de ejemplo. La prueba real verifica el contrato del servidor; no requiere pruebas de carga ni pruebas de instalación de Tytan.
 
-## 11. Mensaje para el responsable de Tytan
+## 12. Detalles que se resolverán durante la implementación
 
-> Estoy preparando un actualizador que detecte versiones antiguas y obtenga el paquete correspondiente por HTTPS. ¿Debe integrarse en Tytan o ejecutarse como herramienta externa? Necesito conocer el lenguaje y la forma de llamarlo, dónde se guarda la versión instalada, cómo se consultan los archivos disponibles en HTTPS y cómo se aplica el ZIP. ¿Podéis facilitar una instalación de prueba, un paquete de ejemplo y el procedimiento de actualización y recuperación?
+- Forma concreta de invocación y compatibilidad del proyecto .NET de Tytan.
+- Mecanismo de configuración de credenciales y destino local.
+- Respuestas reales ante errores y nombres exactos de los paquetes.
+- política ante un ZIP existente y formato del diagnóstico que consume Tytan.
+
+Estos detalles no impiden empezar. Se parte del contrato propuesto y se ajusta al integrar y comprobar la API publicada.

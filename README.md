@@ -1,48 +1,48 @@
 # tytan-updater
 
-Proyecto para comprobar y descargar actualizaciones de Tytan mediante HTTPS y, cuando se defina el procedimiento de instalación, aplicarlas en el equipo del cliente.
+módulo C# para TytanSQL que consulta actualizaciones por HTTPS, compara versiones y descarga el ZIP más reciente cuando es superior a la versión instalada. Tytan se encarga de aplicar la actualización.
 
-Este repositorio contiene documentación inicial. Todavía no hay código ni se ha elegido un lenguaje de programación.
+El repositorio contiene documentación. Ya hay información suficiente para comenzar la implementación del módulo de consulta y descarga.
 
-## Objetivo
+## Alcance confirmado
 
-Detectar si el cliente utiliza una versión antigua de un programa o módulo, localizar una versión más reciente en su carpeta del servidor y actualizarlo siguiendo el procedimiento que indique el responsable de Tytan.
+- Integración con TytanSQL en C# mediante HttpClient.
+- Servidor base: `https://tytan.poznan.pl/SQLupdate/`.
+- Autenticación BasicAuth en todas las peticiones HTTPS.
+- `api.php` lista archivos y carpetas en JSON.
+- `api.php?dir=<carpeta>` lista la carpeta de un cliente.
+- `download.php?file=<ruta-relativa>` descarga un archivo.
+- Ambos endpoints ya están publicados, según confirmación del usuario.
+- Cada carpeta contiene los paquetes de los productos que tiene el cliente.
+- La carpeta, el producto y la versión instalada se reciben desde Tytan.
+- El módulo entrega la ruta local del ZIP descargado y su versión.
+- Tytan realiza la instalación y gestiona el estado de la versión instalada.
 
-La documentación recibida describe la consulta y descarga de ZIP. La petición de actualizar automáticamente amplía ese alcance: hay que definir también cómo instalar esos ZIP.
-
-## Información disponible
-
-- Dirección del servidor: `https://tytan.poznan.pl/SQLupdate/`.
-- Cada cliente tiene una carpeta propia, como `Barcin_Wodbar` o `barczewo_zwik`.
-- Las actualizaciones se distribuyen como ZIP con el módulo y su versión en el nombre.
-- La aplicación del cliente guarda su carpeta de actualizaciones y la versión actual, según el documento recibido.
-- Si hay una versión superior a la instalada, se debe descargar la actualización.
-
-Ejemplo de nombre, con la extensión inferida del texto del documento:
+## Ejemplo
 
 ```text
-Faktury_008.000.043.zip
-└ módulo └ versión
+Carpeta:           Barcin_Wodbar
+Producto:          Faktury
+Versión instalada: 008.000.042
+Paquete remoto:    Faktury_008.000.043.zip
+Resultado:         ZIP descargado y ruta local devuelta a Tytan
 ```
 
-El documento incluye credenciales de acceso. No se copian al repositorio.
+## Plan
 
-## Cómo plantearlo
+1. Definir una interfaz C# que reciba los datos de Tytan.
+2. Consultar la API y convertir el JSON en objetos.
+3. Filtrar los ZIP del producto y comparar las versiones numéricas.
+4. Descargar el paquete a un archivo temporal y publicarlo localmente al completarse.
+5. Devolver un resultado explícito: sin actualización, descargado, cancelado o error.
+6. Verificar las reglas localmente y comprobar después el contrato del servidor real.
 
-1. Confirmar cómo obtener la versión instalada y cómo consultar los archivos por HTTPS.
-2. Implementar una comprobación que indique si existe una actualización.
-3. Añadir la descarga y validación del paquete.
-4. Implementar la instalación cuando se conozca el procedimiento real de Tytan.
-5. Probar el flujo completo con una instalación de prueba antes de utilizarlo con clientes.
+Se utilizará el entorno .NET disponible, ajustando la compatibilidad al proyecto de Tytan durante la integración. La elección de versión no bloquea el inicio.
 
-El actualizador podría integrarse en la aplicación o ejecutarse como una herramienta externa. Esa decisión sigue pendiente.
+El contrato, los endpoints, las reglas y las pruebas están en [docs/planteamiento.md](docs/planteamiento.md).
 
-El detalle de requisitos, arquitectura propuesta, preguntas y fases está en [docs/planteamiento.md](docs/planteamiento.md).
+## Fuentes y estado
 
-## Estado actual
+Documentos revisados en `F:\SQL_Update`: proyecto v1.0, proyecto v1.1, guía de integración HTTPS + BasicAuth y su copia de seguridad. Alcance actualizado con las confirmaciones del usuario del 5 de octubre de 2026.
 
-- Documentación preparada a partir de dos fotografías del mismo documento y la conversación inicial.
-- Acceso al servidor sin verificar: el intento de abrir la URL con la herramienta web no permitió consultar su contenido.
-- Pendientes: aplicación de prueba, ZIP de ejemplo, lenguaje de integración y procedimiento de instalación.
-
-El cambio de FTP a HTTPS define cómo se transportan los archivos. Por sí solo no demuestra que se haya resuelto la saturación de la red; ese resultado deberá medirse.
+La publicación de los endpoints está confirmada por el usuario; su respuesta todavía no se ha verificado desde este proyecto. Las credenciales de los documentos se configurarán fuera del repositorio.
