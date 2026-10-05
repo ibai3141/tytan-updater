@@ -9,31 +9,31 @@ public sealed class UpdateService(UpdateApiClient api)
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
-            PathRules.ValidateSegment(request.ClientFolder, "Carpeta del cliente");
-            PathRules.ValidateSegment(request.Product, "Producto");
+            PathRules.ValidateSegment(request.ClientFolder, "Client folder");
+            PathRules.ValidateSegment(request.Product, "Product");
             ArgumentException.ThrowIfNullOrWhiteSpace(request.DestinationDirectory);
             if (!PackageVersion.TryParse(request.InstalledVersion, out var installed))
-                throw new ArgumentException("La versión instalada debe tener tres componentes numéricos.");
+                throw new ArgumentException("The installed version must have three numeric components.");
             var files = await api.ListAsync(request.ClientFolder, cancellationToken);
             var package = PackageSelector.SelectNewest(files, request.Product);
             available = package?.Version.ToString();
             if (package is null || package.Version.CompareTo(installed) <= 0)
                 return new(UpdateStatus.NoUpdate, request.Product, request.InstalledVersion, available,
-                    Message: package is null ? "No hay paquete disponible para el producto." : "No hay una versión superior.");
+                    Message: package is null ? "No package is available for this product." : "No newer version is available.");
             var path = await api.DownloadAsync(package, request.ClientFolder, request.DestinationDirectory, cancellationToken);
             return new(UpdateStatus.Downloaded, request.Product, request.InstalledVersion, available, path,
-                "Paquete descargado; Tytan puede continuar con su instalación.");
+                "Package downloaded; Tytan can proceed with installation.");
         }
         catch (OperationCanceledException)
         {
             return new(cancellationToken.IsCancellationRequested ? UpdateStatus.Cancelled : UpdateStatus.Error,
                 request.Product, request.InstalledVersion, available,
-                Message: cancellationToken.IsCancellationRequested ? "Operación cancelada." : "Tiempo de espera agotado.");
+                Message: cancellationToken.IsCancellationRequested ? "Operation cancelled." : "Request timed out.");
         }
         catch (HttpRequestException e)
         {
             return new(UpdateStatus.Error, request.Product, request.InstalledVersion, available,
-                Message: e.StatusCode is { } status ? $"Error HTTP {(int)status}; compruebe acceso y ruta del servidor." : "No se pudo conectar con el servidor.");
+                Message: e.StatusCode is { } status ? $"HTTP error {(int)status}; check access and the server path." : "Could not connect to the server.");
         }
         catch (Exception e) when (e is IOException or InvalidDataException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
         {

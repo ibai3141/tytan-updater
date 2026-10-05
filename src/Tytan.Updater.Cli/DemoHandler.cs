@@ -12,7 +12,7 @@ internal sealed class DemoHandler : HttpMessageHandler
         using var output = new MemoryStream();
         using (var archive = new ZipArchive(output, ZipArchiveMode.Create, leaveOpen: true))
         using (var writer = new StreamWriter(archive.CreateEntry("DEMO.txt").Open()))
-            writer.Write("Paquete de demostración. No contiene una actualización de Tytan.");
+            writer.Write("Demo package. This is not a Tytan update.");
         package = output.ToArray();
     }
 

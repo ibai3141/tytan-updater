@@ -10,14 +10,14 @@ public sealed partial class UpdateApiClient
         ArgumentNullException.ThrowIfNull(package);
         PathRules.ValidatePackage(package.File, clientFolder);
         if (!package.File.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
-            throw new InvalidDataException("El archivo seleccionado no es un ZIP.");
+            throw new InvalidDataException("The selected file is not a ZIP archive.");
         ArgumentException.ThrowIfNullOrWhiteSpace(destinationDirectory);
         var destination = Path.GetFullPath(destinationDirectory);
         cancellationToken.ThrowIfCancellationRequested();
         Directory.CreateDirectory(destination);
         var finalPath = Path.Combine(destination, package.File.Name);
         if (File.Exists(finalPath) || Directory.Exists(finalPath))
-            throw new IOException("El archivo de destino ya existe; no se sobrescribe.");
+            throw new IOException("The destination file already exists; it will not be overwritten.");
         var temporary = Path.Combine(destination, $".tytan-{Guid.NewGuid():N}.part");
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(http.Timeout);
@@ -35,7 +35,7 @@ public sealed partial class UpdateApiClient
                 await output.FlushAsync(token);
                 if ((package.File.Size is long expected && output.Length != expected) ||
                     (response.Content.Headers.ContentLength is long length && output.Length != length))
-                    throw new InvalidDataException("El tamaño descargado no coincide con el esperado.");
+                    throw new InvalidDataException("The downloaded size does not match the expected size.");
             }
             await ValidateZipAsync(temporary, token);
             token.ThrowIfCancellationRequested();
@@ -55,7 +55,7 @@ public sealed partial class UpdateApiClient
     private static async Task ValidateZipAsync(string path, CancellationToken token)
     {
         using var archive = ZipFile.OpenRead(path);
-        if (archive.Entries.Count == 0) throw new InvalidDataException("El ZIP no contiene archivos.");
+        if (archive.Entries.Count == 0) throw new InvalidDataException("The ZIP archive contains no files.");
         foreach (var entry in archive.Entries)
         {
             token.ThrowIfCancellationRequested();

@@ -7,20 +7,20 @@ Console.OutputEncoding = Encoding.UTF8;
 if (args.Length == 0 || args is ["--help"])
 {
     Console.WriteLine("""
-        Tytan Updater - consulta y descarga; la instalación corresponde a Tytan.
-        list <carpeta-cliente>
-        download <carpeta-cliente> <producto> <version-instalada> <destino>
-        demo <destino>         Prueba local sin servidor ni credenciales.
+        Tytan Updater - check and download updates; Tytan handles installation.
+        list <client-folder>
+        download <client-folder> <product> <installed-version> <destination>
+        demo <destination>    Local demo without a server or credentials.
 
-        Acceso real: configurar TYTAN_USERNAME y TYTAN_PASSWORD.
-        TYTAN_BASE_URL es opcional; por defecto https://tytan.poznan.pl/SQLupdate/
-        Los archivos existentes no se sobrescriben. Ctrl+C cancela la operación.
+        Server access: set TYTAN_USERNAME and TYTAN_PASSWORD.
+        TYTAN_BASE_URL is optional; defaults to https://tytan.poznan.pl/SQLupdate/
+        Existing files are never overwritten. Press Ctrl+C to cancel.
         """);
     return 0;
 }
 if (!(args is ["list", _] or ["download", _, _, _, _] or ["demo", _]))
 {
-    Console.Error.WriteLine("Argumentos no válidos. Consulte --help.");
+    Console.Error.WriteLine("Invalid arguments. See --help.");
     return 2;
 }
 
@@ -35,7 +35,7 @@ try
     var password = demo ? "demo" : Environment.GetEnvironmentVariable("TYTAN_PASSWORD");
     if (string.IsNullOrWhiteSpace(username) || password is null)
     {
-        Console.Error.WriteLine("Configure TYTAN_USERNAME y TYTAN_PASSWORD fuera del repositorio.");
+        Console.Error.WriteLine("Set TYTAN_USERNAME and TYTAN_PASSWORD outside the repository.");
         return 2;
     }
     var baseUrl = demo ? "https://demo.invalid/SQLupdate/" :
@@ -54,18 +54,18 @@ try
 }
 catch (OperationCanceledException)
 {
-    Console.Error.WriteLine(cancellation.IsCancellationRequested ? "Operación cancelada." : "Tiempo de espera agotado.");
+    Console.Error.WriteLine(cancellation.IsCancellationRequested ? "Operation cancelled." : "Request timed out.");
     return cancellation.IsCancellationRequested ? 130 : 1;
 }
 catch (HttpRequestException e)
 {
-    Console.Error.WriteLine(e.StatusCode is { } code ? $"Error HTTP {(int)code}; compruebe acceso y ruta." : "No se pudo conectar con el servidor.");
+    Console.Error.WriteLine(e.StatusCode is { } code ? $"HTTP error {(int)code}; check access and the server path." : "Could not connect to the server.");
     return 1;
 }
 catch (Exception e) when (e is ArgumentException or InvalidDataException or IOException or UnauthorizedAccessException)
 {
     // Do not print raw URL/credential-related exception details.
-    Console.Error.WriteLine("Configuración, respuesta o destino no válidos. Compruebe los datos de entrada.");
+    Console.Error.WriteLine("Invalid configuration, response or destination. Check the input values.");
     return 2;
 }
 finally { Console.CancelKeyPress -= cancel; }

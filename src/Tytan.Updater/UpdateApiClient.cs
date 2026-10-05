@@ -18,11 +18,11 @@ public sealed partial class UpdateApiClient : IDisposable
         ArgumentNullException.ThrowIfNull(baseUri);
         if (!baseUri.IsAbsoluteUri || baseUri.Scheme != Uri.UriSchemeHttps ||
             baseUri.Query.Length != 0 || baseUri.Fragment.Length != 0 || baseUri.UserInfo.Length != 0)
-            throw new ArgumentException("La dirección base debe ser HTTPS, sin credenciales ni parámetros.", nameof(baseUri));
+            throw new ArgumentException("The base URL must use HTTPS and contain no credentials or query parameters.", nameof(baseUri));
         ArgumentException.ThrowIfNullOrWhiteSpace(username);
         ArgumentNullException.ThrowIfNull(password);
         if (username.Contains(':') || username.Any(char.IsControl) || password.Any(char.IsControl))
-            throw new ArgumentException("Credenciales no válidas.");
+            throw new ArgumentException("Invalid credentials.");
         var requestTimeout = timeout ?? TimeSpan.FromMinutes(2);
         if (requestTimeout <= TimeSpan.Zero || requestTimeout > TimeSpan.FromDays(1))
             throw new ArgumentOutOfRangeException(nameof(timeout));
@@ -33,7 +33,7 @@ public sealed partial class UpdateApiClient : IDisposable
 
     public async Task<IReadOnlyList<FileEntry>> ListAsync(string? clientFolder = null, CancellationToken cancellationToken = default)
     {
-        if (clientFolder is not null) PathRules.ValidateSegment(clientFolder, "Carpeta del cliente");
+        if (clientFolder is not null) PathRules.ValidateSegment(clientFolder, "Client folder");
         var endpoint = "api.php" + (clientFolder is null ? "" : "?dir=" + Uri.EscapeDataString(clientFolder));
         using var request = CreateRequest(endpoint);
         using var response = await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
@@ -46,12 +46,12 @@ public sealed partial class UpdateApiClient : IDisposable
             var entries = await JsonSerializer.DeserializeAsync<List<FileEntry>>(stream, cancellationToken: timeout.Token);
             if (entries is null || entries.Any(e => e is null || string.IsNullOrEmpty(e.Name) ||
                 e.Type is not ("file" or "folder") || string.IsNullOrEmpty(e.Path) || e.Size is < 0))
-                throw new InvalidDataException("El listado del servidor contiene datos incompletos o inválidos.");
+                throw new InvalidDataException("The server listing contains incomplete or invalid data.");
             return entries;
         }
         catch (JsonException)
         {
-            throw new InvalidDataException("El servidor no devolvió un listado JSON válido.");
+            throw new InvalidDataException("The server did not return a valid JSON listing.");
         }
     }
 
@@ -67,10 +67,10 @@ public sealed partial class UpdateApiClient : IDisposable
         if (response.IsSuccessStatusCode) return;
         var message = response.StatusCode switch
         {
-            HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden => "Acceso rechazado por el servidor.",
-            HttpStatusCode.NotFound => "Carpeta, archivo o endpoint no encontrado.",
-            _ when (int)response.StatusCode is >= 300 and < 400 => "El servidor devolvió una redirección; compruebe la dirección base.",
-            _ => $"El servidor devolvió un error HTTP {(int)response.StatusCode}."
+            HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden => "Access denied by the server.",
+            HttpStatusCode.NotFound => "Folder, file or endpoint not found.",
+            _ when (int)response.StatusCode is >= 300 and < 400 => "The server returned a redirect; check the base URL.",
+            _ => $"The server returned HTTP error {(int)response.StatusCode}."
         };
         throw new HttpRequestException(message, null, response.StatusCode);
     }
