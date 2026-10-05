@@ -585,25 +585,7 @@ switch (result.Status)
 
 Tytan should hand LocalPath to its existing installer only for Downloaded. It should not change its installed-version record merely because AvailableVersion is populated or a ZIP was downloaded.
 
-## 15. C# syntax used in the project
-
-| Syntax | Meaning in this project |
-| --- | --- |
-| `async` / `await` | Allow HTTP and file waits without blocking the calling thread while awaiting I/O |
-| `Task<T>` | A future result, such as UpdateResult or a listing |
-| `CancellationToken` | A cancellation request shared across operations |
-| `using` / `await using` | Dispose clients, responses, archives, and streams when leaving the scope |
-| `record` | A data type with generated value equality and properties |
-| `record struct` | A value type used for the three version numbers |
-| `sealed` | Prevent inheritance from a class or record |
-| `partial` | Split one class across multiple source files |
-| `string?` / `long?` | Allow a null reference or nullable number |
-| `?.` | Access a member only when its owner is not null |
-| `??` | Use a fallback value when the left side is null |
-| `..` and `^4` | Slice a string; count a position from the end |
-| `try` / `catch` / `finally` | Run an operation, handle failures, and perform cleanup |
-
-## 16. Commands to try
+## 15. Commands to try
 
 From the repository root:
 
@@ -616,7 +598,7 @@ dotnet run --project src/Tytan.Updater.Cli -- demo ./downloads/demo
 
 The demo creates Demo_001.000.002.zip. Repeating it with the same destination reports an existing-file error and preserves the file. Server commands and credential setup are documented in docs/uso.md.
 
-## 17. Current limits and next steps
+## 16. Current limits and next steps
 
 - Confirm the exact API and download paths because the documented listing URL returned HTTP 404.
 - Validate the actual JSON and package naming against the production server before claiming live compatibility.
@@ -627,15 +609,3 @@ The demo creates Demo_001.000.002.zip. Repeating it with the same destination re
 - Reading a ZIP confirms readability, not product compatibility or successful installation.
 
 Suggested reading order: Models.cs, UpdateService.cs, UpdateApiClient.cs, PackageSelector.cs, PackageVersion.cs, PackageDownload.cs, then the CLI and tests.
-
-## 18. Document maintenance
-
-This Markdown file is the editable source for the Word document. Regenerate the Word version after changing the guide:
-
-```powershell
-python -m pip install -r scripts/requirements-docs.txt
-python scripts/export_technical_doc.py
-```
-
-These are documentation-export dependencies, not dependencies of the .NET application. The exporter writes docs/technical-walkthrough.docx from this Markdown document.
-
