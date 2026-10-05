@@ -1,0 +1,8 @@
+**/bin/
+**/obj/
+.vs/
+.idea/
+downloads/
+*.user
+*.local.json
+.env
