@@ -4,6 +4,15 @@ A C# module for TytanSQL that checks for updates over HTTPS, compares versions, 
 
 The repository contains a .NET 9 library, a command-line tool, and local tests without external dependencies.
 
+## Technical code walkthrough
+
+The guide explains the execution flow, every component, actual source excerpts, error handling, the demo, tests, and integration with Tytan:
+
+- [Markdown guide](docs/technical-walkthrough.md)
+- [Word document](docs/technical-walkthrough.docx)
+
+To regenerate the Word document from Markdown, install `scripts/requirements-docs.txt` and run `python scripts/export_technical_doc.py`.
+
 ## Quick start
 
 ```powershell
