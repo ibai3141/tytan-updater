@@ -139,6 +139,22 @@ def main():
                          "if (inside_root(" + json.dumps(str(sibling)) + ', ' + json.dumps(str(root)) + ')) exit(1);')
                 subprocess.run([php, '-r', check], check=True)
                 count += 1
+
+                # Encoding failures must return generic JSON and log details privately.
+                encoding_check = (
+                    "define('TYTAN_ENDPOINT', true); require " + json.dumps(str(root / 'common.php')) + '; '
+                    "$_SERVER['REQUEST_METHOD']='GET'; $_SERVER['HTTPS']='on'; "
+                    "$_SERVER['PHP_AUTH_USER']='test-user'; $_SERVER['PHP_AUTH_PW']='test-password'; "
+                    "bootstrap(); send_json(['bad'=>chr(255)]);"
+                )
+                encoding_script = workspace / 'encoding-check.php'
+                encoding_script.write_text('<?php ' + encoding_check, encoding='utf-8')
+                encoded = subprocess.run([php, str(encoding_script)], env=env,
+                                         capture_output=True, check=True)
+                assert json.loads(encoded.stdout) == {'error': 'The server could not complete the request.'}
+                assert b'RuntimeException: JSON encoding failed:' in encoded.stderr
+                count += 1
+
                 # Exercise configuration failures with fresh server processes.
                 def configuration_case(overrides, expected):
                     nonlocal base

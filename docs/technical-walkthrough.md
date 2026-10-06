@@ -763,7 +763,7 @@ Suggested reading order: Models.cs, UpdateService.cs, UpdateApiClient.cs, Packag
 
 ## 17. PHP server - listing and downloading
 
-The PHP implementation is the server half of the contract. api.php lists folders and ZIP packages; download.php streams a selected ZIP. common.php shares authentication, HTTPS checks, canonical-path validation, and JSON error handling. The C# module still selects versions and Tytan still installs packages.
+The PHP implementation is the server half of the contract and is tested on PHP 7.2.34 and PHP 8.5.11. Prefix checks use strpos rather than the PHP 8-only str_starts_with function. JSON encoding checks the false return value explicitly because JSON_THROW_ON_ERROR is unavailable in PHP 7.2. api.php lists folders and ZIP packages; download.php streams a selected ZIP. common.php shares authentication, HTTPS checks, canonical-path validation, and JSON error handling. The C# module still selects versions and Tytan still installs packages.
 
 ### Listing a client folder
 
@@ -895,7 +895,8 @@ Source: `server/common.php`
 function inside_root(string $path, string $base): bool
 {
     // A separator boundary prevents SQLupdate-other from matching SQLupdate.
-    return $path === $base || str_starts_with($path, rtrim($base, '/\\') . DIRECTORY_SEPARATOR);
+    // strpos(... ) === 0 provides prefix matching on both PHP 7.2 and PHP 8.
+    return $path === $base || strpos($path, rtrim($base, '/\\') . DIRECTORY_SEPARATOR) === 0;
 }
 
 function resolve_target(string $base, string $relative): string

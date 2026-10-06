@@ -9,7 +9,12 @@ if (!defined('TYTAN_ENDPOINT')) {
 
 function send_json(array $data, int $status = 200): void
 {
-    $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+    // PHP 7.2 has no JSON_THROW_ON_ERROR; explicitly check encoding failures.
+    $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    if ($json === false) {
+        throw new RuntimeException('JSON encoding failed: ' . json_last_error_msg());
+    }
+
     http_response_code($status);
     header('Content-Type: application/json; charset=utf-8');
     header('Cache-Control: no-store');
@@ -74,7 +79,14 @@ function bootstrap(): string
     // Log server errors without exposing filesystem paths or PHP warnings to clients.
     ini_set('display_errors', '0');
     set_exception_handler(function (Throwable $error): void {
-        error_log('Tytan SQLupdate endpoint failure: ' . get_class($error));
+        // Keep details in the private server log, while the response remains generic.
+        error_log(sprintf(
+            'Tytan SQLupdate endpoint failure: %s: %s in %s:%d',
+            get_class($error),
+            $error->getMessage(),
+            $error->getFile(),
+            $error->getLine()
+        ));
         if (!headers_sent()) {
             fail_request(500, 'The server could not complete the request.');
         }
@@ -141,7 +153,8 @@ function public_name(string $name): bool
 function inside_root(string $path, string $base): bool
 {
     // A separator boundary prevents SQLupdate-other from matching SQLupdate.
-    return $path === $base || str_starts_with($path, rtrim($base, '/\\') . DIRECTORY_SEPARATOR);
+    // strpos(... ) === 0 provides prefix matching on both PHP 7.2 and PHP 8.
+    return $path === $base || strpos($path, rtrim($base, '/\\') . DIRECTORY_SEPARATOR) === 0;
 }
 
 function resolve_target(string $base, string $relative): string

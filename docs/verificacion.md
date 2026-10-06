@@ -36,3 +36,12 @@ Tytan's actual application is not in the repository: an integration example has 
 - The .NET Release build completed with zero errors and zero warnings.
 - Local PHP used its built-in server on loopback HTTP. A test-only handler connected the C# client to it. Production HTTPS transport, Apache BasicAuth, and hosting publication are not validated by these checks.
 - No production files were uploaded or changed. Deployment remains pending; see [Server setup](server.md).
+
+## October 6, 2026: hosting PHP 7.2 compatibility fix
+
+- The user reported uploading the endpoint files. A read-only production check returned HTTP 401 without credentials and HTTP 500 with the generic endpoint JSON error after authentication.
+- The user confirmed PHP 7.2.34 and that str_starts_with is unavailable. The original common.php also used JSON_THROW_ON_ERROR, introduced after PHP 7.2.
+- common.php now checks prefixes using strpos, explicitly handles json_encode failures, and logs exception details privately while keeping generic JSON responses.
+- All three files passed syntax checks on actual PHP 7.2.34 and PHP 8.5.11. All 37 endpoint checks passed on each runtime, including a new invalid UTF-8 encoding failure and private-log regression check.
+- All 17 C# tests passed against PHP 7.2.34, including actual listing and ZIP download integration. The filesystem symlink case remains skipped because Windows does not allow creating it in this environment.
+- The compatibility fix has not been uploaded by this agent. Replace the deployed common.php and verify the live listing and download. Production success is not yet confirmed.

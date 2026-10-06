@@ -27,7 +27,7 @@ Only the three PHP files are needed for the endpoints. Do not upload the whole r
 
 ## Requirements and authentication
 
-Use a supported PHP 8.x runtime with JSON and filesystem access; no Composer dependencies, database, or ZIP extension is required. Files already exist as ZIPs; the server streams them without extracting them.
+The endpoints are compatible with PHP 7.2 and PHP 8, tested on the hosting version PHP 7.2.34 and on PHP 8.5.11. They require JSON and filesystem access; no Composer dependencies, database, or ZIP extension is required. Files already exist as ZIPs; the server streams them without extracting them.
 
 Production requests must use HTTPS. PHP checks the web server's HTTPS flag or port 443. With TLS termination upstream, configure the trusted hosting server to pass the correct HTTPS state. The endpoints do not trust client-supplied X-Forwarded-Proto headers.
 
@@ -111,7 +111,7 @@ Both endpoints accept GET and HEAD. Query arrays, absolute paths, backslashes, t
 | 500 | Listing, metadata, or file operation failed |
 | 503 | Authentication or package root not configured correctly |
 
-Endpoint errors return JSON with an error field and an English message. Server-side exceptions are logged by type without exposing paths to the response. Direct access to common.php returns a plain 404 and no data.
+Endpoint errors return JSON with an error field and an English message. Server-side exceptions log their type, message, source file, and line privately without exposing those details in the response. Direct access to common.php returns a plain 404 and no data.
 
 The provided shared account can access all client folders under the configured root, as in the original documents. Client-folder filtering does not implement separate authorization for each customer.
 
@@ -129,13 +129,15 @@ If PHP is not on PATH:
 python tests/server/test_endpoints.py --php C:/path/to/php.exe --with-client
 ```
 
-The harness creates temporary client folders and actual ZIPs, launches PHP's built-in server on loopback, checks authentication, listings, paths, byte-for-byte downloads, headers, HEAD, and configuration failures, and stops the server afterward. A filesystem symlink escape case is skipped if the operating system does not allow creating symlinks; the sibling-prefix boundary check always runs.
+The harness creates temporary client folders and actual ZIPs, launches PHP's built-in server on loopback, checks authentication, listings, paths, byte-for-byte downloads, headers, HEAD, JSON encoding failures with private exception logs, and configuration failures, and stops the server afterward. A filesystem symlink escape case is skipped if the operating system does not allow creating symlinks; the sibling-prefix boundary check always runs.
 
 With --with-client, it runs the 15 existing C# tests plus two integration cases against the actual PHP implementation. A test-only handler maps the C# requests to the local HTTP server. Production HTTPS checks and the production C# transport remain unchanged. This verifies the application contract and downloaded bytes, not production TLS or Apache configuration.
 
 ## Publishing and acceptance
 
-The files are implemented locally; they have not been uploaded to the hosting server. After deployment:
+The user has uploaded the three files. The initial authenticated API request returned HTTP 500, and the hosting runtime was confirmed as PHP 7.2.34 without str_starts_with. The shared implementation now uses strpos for prefix checks and explicitly checks json_encode failures instead of JSON_THROW_ON_ERROR.
+
+Upload the updated common.php to SQLupdate, replacing the initial copy. api.php and download.php need no changes for this fix. No .htaccess change is required by this compatibility fix. Then:
 
 1. Confirm PHP execution, HTTPS, root location, and hosting authentication.
 2. Check that unauthenticated requests are rejected.

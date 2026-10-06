@@ -74,4 +74,4 @@ See [Technical design](docs/planteamiento.md) for the contract, endpoints, and r
 
 The documents reviewed in `F:\SQL_Update` include project v1.0, project v1.1, the HTTPS + BasicAuth integration guide, and its backup. The scope includes the October 6, 2026 correction: this project must create the PHP API and download endpoints.
 
-The earlier assumption that the endpoints were already published was corrected on October 6. The October 5 request returned HTTP 404; the new PHP files have now been tested locally but have not been uploaded to the hosting server. See [Verification record](docs/verificacion.md). Credentials are configured outside the repository.
+The earlier assumption that the endpoints were already published was corrected on October 6. The October 5 request returned HTTP 404; the user has now uploaded the PHP files. The initial authenticated request returned HTTP 500 on PHP 7.2.34; the compatibility fix in common.php must be uploaded and verified on the hosting server. See [Verification record](docs/verificacion.md). Credentials are configured outside the repository.
