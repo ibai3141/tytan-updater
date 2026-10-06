@@ -2,7 +2,17 @@
 
 PHP endpoints for distributing TytanSQL update ZIPs over HTTPS with BasicAuth. The delivered server lists available client folders and packages and streams a selected ZIP. Tytan's application selects versions and installs updates.
 
-The repository now focuses on the PHP server. The earlier C# client, CLI, solution, and dependent tests have been removed at the user's request; their history remains in Git.
+The repository delivers the PHP server and now starts a local Windows updater, following the clarified request to read client information and installed versions from the customer's computer. The earlier C# library/CLI prototype was removed; the new desktop application is developed incrementally under desktop/.
+
+## Local Windows application: phase 1
+
+The first desktop phase opens a local installation JSON file and displays the client folder, products, and installed versions. Click Load example to try the provisional format. It does not contact the API or download packages yet.
+
+```powershell
+dotnet run --project desktop/Tytan.Updater.Desktop --configuration Release
+```
+
+See [Desktop workflow, run instructions, and next phases](docs/desktop.md). All clients will use the shared hosting account, as requested; selecting a client folder is not an authorization boundary. The definitive installation-file format remains pending from the other developer.
 
 ## Delivered files
 
@@ -25,6 +35,7 @@ Deploy the three PHP files to SQLupdate. Keep the hosting's working authenticati
 - [Scope and integration contract](docs/planteamiento.md)
 - [Implementation phases](docs/fases.md)
 - [Results and verification history](docs/verificacion.md)
+- [Local Windows application](docs/desktop.md)
 
 ## Production URLs
 
@@ -38,7 +49,7 @@ On October 6, 2026, the user supplied successful root and client JSON listings a
 
 ## Local tests
 
-Python and PHP are required; no .NET SDK, Composer, or database is needed.
+The PHP endpoint tests require Python and PHP; no .NET SDK, Composer, or database is needed for those tests. The desktop build and checks separately require the .NET 9 SDK on Windows.
 
 ```powershell
 python tests/server/test_endpoints.py --php C:/path/to/php.exe

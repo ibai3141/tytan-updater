@@ -6,7 +6,9 @@ Updated: October 6, 2026.
 
 This project delivers api.php, download.php, and common.php for the existing SQLupdate hosting directory. The original documents in F:\SQL_Update describe client-specific directories, versioned ZIP packages, HTTPS, and BasicAuth. The guide contains both a statement that endpoints are already prepared and instructions to place endpoint files. The user's subsequent clarification establishes that creating those endpoints is our responsibility.
 
-The initial C# implementation has been removed at the user's request. Tytan integrates these HTTP endpoints into its own application.
+The initial C# library/CLI prototype was removed at the user's request. The latest clarification adds a local Windows application with a window: identify the client from local information, query that cloud folder, compare installed and remote versions, and allow downloading newer ZIPs. A new incremental desktop implementation lives under desktop/. Its first phase reads a provisional local JSON file and displays installed products; cloud access comes in later phases. See desktop.md.
+
+All clients will share the existing BasicAuth account, as expressly requested. The local client-folder name selects which directory the application requests; it does not restrict the account's server access. The PHP endpoints and hosting authentication remain unchanged. The final source of the client name (folder or installation file) and the definitive file format are pending.
 
 ## Responsibilities
 
@@ -14,7 +16,8 @@ The initial C# implementation has been removed at the user's request. Tytan inte
 | --- | --- |
 | This PHP server | Authenticate, validate requests, list folders/ZIP metadata, stream selected ZIPs |
 | Hosting administrator | PHP execution, HTTPS, BasicAuth, permissions, package publication, logs |
-| Tytan application | Know the client folder, product, and installed version; compare versions; download and validate; install and record the installed version |
+| Local updater | Read client/product/version information, query that client's folder, compare versions, and download/validate newer ZIPs; delivered incrementally |
+| Tytan and installation-file developer | Define the real local information source, provide installed versions, and confirm installation and how installed versions are updated |
 
 The PHP API does not receive an installed version and does not choose or install updates. This is the implemented listing/download contract.
 

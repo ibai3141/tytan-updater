@@ -1,6 +1,6 @@
 # Verification record
 
-Current status: the user has confirmed working production listing and downloading. The current delivery contains PHP only, and the retained 37 endpoint checks passed again on PHP 7.2.34 and PHP 8.5.11 after removing C# dependencies. Earlier sections preserve historical checkpoints.
+Current status: the user has confirmed working production listing and downloading. The PHP server passed 37 endpoint checks on PHP 7.2.34 and PHP 8.5.11 after the initial C# prototype was removed. A later request adds a new incremental local Windows application, recorded below. Earlier sections preserve historical checkpoints.
 
 ## October 5, 2026: live server query
 
@@ -74,3 +74,13 @@ The observed initial 500 was resolved after the PHP 7.2 compatibility fix. Root 
 At the user's request, src, the C# solution, dependent C# tests, and the optional client test switch were removed. They remain in Git history. Historical 17/17 C# results above describe the earlier implementation, not a test command available in the current checkout.
 
 The retained Python harness tests the three actual PHP files independently of .NET. It verifies 37 endpoint checks on PHP 7.2.34 and PHP 8.5.11 in this Windows environment; the filesystem symlink case is skipped when creating symlinks is unavailable. Tytan's actual version selection and installation remain outside the acceptance performed here.
+
+## October 6, 2026: new desktop phase 1
+
+- Scope clarified: create a local window to read the client identifier and installed versions, query that client's cloud directory, compare versions, and download newer packages. Shared credentials and client-side directory selection were expressly requested; no customer access isolation is claimed.
+- The repository was clean before this phase. The uncommitted Swagger page, specification, scripts, and README addition were already absent; only an empty leftover resource directory remained. No Swagger work is included in this delivery.
+- A new WinForms application targets net9.0-windows under desktop/. It reads a provisional JSON file rather than claiming knowledge of the definitive file or detecting actual installed applications.
+- Release build succeeded with zero errors and zero warnings using .NET SDK 9.0.304.
+- All 10 desktop checks passed: example parsing, malformed JSON, traversal, malformed versions, duplicate/empty/null products, unexpected fields, window grid values, and preserving valid state after an invalid replacement.
+- The actual form was opened by the smoke check and captured via DrawToBitmap for visual inspection. The capture contains only this application's window and is stored in ignored downloads/.
+- No API requests, production changes, downloads, installations, credential persistence, or installation-file writes occur in this phase. PHP endpoint behavior was not changed.

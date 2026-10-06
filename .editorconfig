@@ -1,6 +1,10 @@
 root = true
 
-[*.{php,py}]
+[*.{php,py,cs}]
 indent_style = space
 indent_size = 4
 insert_final_newline = true
+
+[*.cs]
+csharp_prefer_braces = true:suggestion
+csharp_preserve_single_line_blocks = false

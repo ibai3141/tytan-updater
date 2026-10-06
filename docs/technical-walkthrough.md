@@ -2,7 +2,7 @@
 
 Updated: October 6, 2026.
 
-This document describes the delivered PHP server, its source code, deployment, integration contract, and observed results. The previous C# prototype has been removed from the current repository at the user's request. Tytan consumes these HTTP endpoints through its own application.
+This document describes the delivered PHP server, its source code, deployment, integration contract, and observed results. The previous C# library/CLI prototype was removed at the user's request. A later clarification introduces a local Windows application, developed incrementally under desktop/. Its phase 1 window and provisional local installation file are documented separately in desktop.md. This guide remains the PHP server reference.
 
 ## 1. Purpose and responsibilities
 
@@ -460,7 +460,7 @@ python tests/server/test_endpoints.py --php C:/path/to/php.exe
 
 The current harness passes 37 checks on PHP 7.2.34 and PHP 8.5.11 in this Windows environment. Coverage includes syntax, authentication failures, method checks, root/client/empty listings, invalid parameters, traversal, non-ZIP requests, missing files, byte-for-byte downloads, headers, HEAD, names containing spaces/ampersands, root-prefix boundaries, invalid UTF-8 JSON error handling, and configuration failures. A filesystem symlink escape case is skipped if the operating system does not allow creating symlinks; the sibling-prefix check always runs. The tests do not validate production Apache configuration or concurrent load.
 
-The former C# tests passed 17/17 before removal; this is historical evidence and no longer a runnable part of the current repository. The retained test command needs Python and PHP only.
+The former C# prototype tests passed 17/17 before removal; this is historical evidence and no longer a runnable part of the current repository. The retained PHP test command needs Python and PHP only. The new desktop application has separate checks documented in desktop.md.
 
 To regenerate this Word document from the Markdown source:
 

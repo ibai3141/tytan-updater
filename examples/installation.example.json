@@ -1,0 +1,17 @@
+{
+  "clientFolder": "Barcin_Wodbar",
+  "products": [
+    {
+      "name": "Faktury",
+      "installedVersion": "008.000.042"
+    },
+    {
+      "name": "FK2025",
+      "installedVersion": "005.005.007"
+    },
+    {
+      "name": "FK2026",
+      "installedVersion": "005.005.039"
+    }
+  ]
+}

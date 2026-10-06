@@ -1,4 +1,7 @@
 downloads/
+**/bin/
+**/obj/
+*.local.json
 __pycache__/
 *.pyc
 .env
