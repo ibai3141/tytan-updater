@@ -1,4 +1,4 @@
-"""Exercise actual PHP endpoints with temporary fixtures and optional C# integration."""
+"""Exercise actual PHP endpoints with temporary fixtures."""
 
 import argparse
 import base64
@@ -19,7 +19,6 @@ import zipfile
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--php', default='php', help='Path to php.exe or the PHP executable')
-    parser.add_argument('--with-client', action='store_true', help='Also run the C# tests against real PHP')
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[2]
     php = shutil.which(args.php) or args.php
@@ -197,11 +196,6 @@ def main():
                 configuration_case({'TYTAN_UPDATE_ROOT': str(workspace / 'missing-root')}, 503)
                 print(f'PASS {count} real-PHP endpoint checks', flush=True)
 
-                if args.with_client:
-                    client_env = os.environ.copy()
-                    client_env['TYTAN_TEST_PHP_BASE_URL'] = f'http://127.0.0.1:{port}/'
-                    subprocess.run(['dotnet', 'run', '--project', str(repo / 'tests/Tytan.Updater.Tests'),
-                                    '--configuration', 'Release'], env=client_env, check=True)
             finally:
                 server.terminate()
                 try:

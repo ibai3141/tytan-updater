@@ -40,7 +40,7 @@ foreach ($items as $name) {
         fail_request(500, 'Package metadata could not be read.');
     }
 
-    // Match the lowercase JSON contract used by FileEntry in the C# client.
+    // Return the lowercase JSON fields defined by the integration contract.
     $result[] = [
         'name' => $name,
         'type' => $folder ? 'folder' : 'file',

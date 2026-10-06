@@ -1,27 +1,14 @@
-# Implementation phases
+# Implementation phases and delivery status
 
-Each phase ends with a build, appropriate checks, and a commit in Spanish, as requested by the user. The user handles pushing to the remote repository.
+Updated: October 6, 2026. Commit messages are Spanish; documentation is English. The user handles pushing.
 
-| Phase | Deliverable | Verification | Completed commit |
-| --- | --- | --- | --- |
-| 1. Foundation and versions | C# library, models, and numeric package selection by product | Invalid versions, different products, and version-based selection | `63ec306` |
-| 2. HTTPS queries | API client with BasicAuth and JSON | Requests, fields, paths, and HTTP errors using a simulated server | `ea281cd` |
-| 3. Downloads | Temporary ZIP, validation, and result returned to Tytan | Sample ZIP, interruptions, cancellation, and existing destinations | `63d7037` |
-| 4. Usage and integration | CLI tool and C# integration example | Complete local execution and usage documentation | `585b658` |
+| Phase | Work | Status |
+| --- | --- | --- |
+| 1. Initial client prototype | C# models, version comparison, HTTPS requests, downloads, CLI | Historical; removed from the current delivery at the user's request |
+| 2. Corrected PHP scope | api.php, download.php, common.php, deployment guide, endpoint tests | Completed in 29983ec |
+| 3. Hosting compatibility | Replace PHP 8 prefix function and post-7.2 JSON flag; improve private logging | Completed in 050ef7a; user subsequently confirmed working hosting |
+| 4. Production acceptance | Root listing, client listing, package download | Listings provided by user; successful downloading reported by user |
+| 5. PHP delivery documentation | Technical Markdown/Word, production evidence, remove C# dependencies | Included in the current delivery |
+| 6. Tytan integration | Version comparison, download validation, installation in Tytan's application | Responsibility of Tytan; not verified in this repository |
 
-The C# implementation uses .NET 9, available on the development machine, without external dependencies. The server implementation is compatible with PHP 7.2 and PHP 8, tested on PHP 7.2.34 and 8.5.11. Tests run as a local executable that returns a nonzero exit code if any case fails. They do not need access to the production server.
-
-Integration with Tytan is provided as an example and a contract: its application is not in this repository. Live endpoint verification is recorded separately from local tests and is only claimed when actually performed.
-
-## Delivered work
-
-- Phase 1: library, models, numeric version comparison, and product selection.
-- Phase 2: HTTPS queries and tests for authentication, JSON, and errors. The live request returned HTTP 404; see [Verification record](verificacion.md).
-- Phase 3: temporary downloads, size and ZIP readability checks, delivery to Tytan, and failure and concurrency tests.
-- Phase 4: CLI commands `list`, `download`, and `demo`, usage instructions, and an integration example. Connecting the module to Tytan's actual application remains pending in its project.
-
-Console help and application-defined result messages were subsequently translated into English in commit `bec6b20`.
-
-## Phase 5: PHP endpoints after the scope correction
-
-On October 6, the user clarified that this project must also create api.php and download.php. This phase adds those endpoints, common.php, an Apache configuration example, deployment instructions, and actual-PHP tests with C# integration. Local implementation is complete. Initial hosting deployment exposed a PHP 7.2 incompatibility; the common.php compatibility fix is tested locally and awaits upload and production verification. See [PHP server](server.md).
+The PHP-only tests run locally on temporary fixtures and do not modify production. Initial C# commits remain accessible in Git history. See verificacion.md for the historical test results and their limits.

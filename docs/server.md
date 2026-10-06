@@ -2,7 +2,7 @@
 
 Updated: October 6, 2026.
 
-The corrected scope includes creating `api.php` and `download.php`. The repository now supplies both endpoints and `common.php`, their shared implementation. They use the contract in the original integration guide and work with the existing C# client. Tytan still handles installation.
+The corrected scope includes creating `api.php` and `download.php`. The repository now supplies both endpoints and `common.php`, their shared implementation. They use the contract in the original integration guide for integration with Tytan's own application. Tytan still handles installation.
 
 ## Files and deployment layout
 
@@ -56,7 +56,7 @@ GET /SQLupdate/api.php
 GET /SQLupdate/api.php?dir=Barcin_Wodbar
 ```
 
-The root request lists folders and any ZIP packages at the root. The dir parameter selects a directory relative to the update root. The PHP endpoint also supports nested relative folders; the current C# client uses one-level client folders.
+The root request lists folders and any ZIP packages at the root. The dir parameter selects a directory relative to the update root. The PHP endpoint also supports nested relative folders; Tytan should supply the appropriate client folder.
 
 Response example, using illustrative values:
 
@@ -72,9 +72,9 @@ Response example, using illustrative values:
 ]
 ```
 
-The response is an array, including [] for an empty directory. Fields match FileEntry in C#. Modified timestamps are UTC; the client uses numeric versions rather than dates to select packages.
+The response is an array, including [] for an empty directory. Fields follow the integration contract. Modified timestamps are UTC; Tytan should use numeric versions rather than dates to select packages.
 
-PHP source files, other non-ZIP files, dotfiles, unreadable entries, and links resolving outside the update root are omitted. The server does not select a version or receive the client's installed version; that logic remains in the C# module.
+PHP source files, other non-ZIP files, dotfiles, unreadable entries, and links resolving outside the update root are omitted. The server does not select a version or receive the client's installed version; that logic belongs to Tytan's application.
 
 ## download.php
 
@@ -117,33 +117,32 @@ The provided shared account can access all client folders under the configured r
 
 ## Local tests
 
-With Python, PHP on PATH, and the .NET SDK installed:
+With Python and PHP on PATH:
 
 ```powershell
-python tests/server/test_endpoints.py --with-client
+python tests/server/test_endpoints.py
 ```
 
 If PHP is not on PATH:
 
 ```powershell
-python tests/server/test_endpoints.py --php C:/path/to/php.exe --with-client
+python tests/server/test_endpoints.py --php C:/path/to/php.exe
 ```
 
 The harness creates temporary client folders and actual ZIPs, launches PHP's built-in server on loopback, checks authentication, listings, paths, byte-for-byte downloads, headers, HEAD, JSON encoding failures with private exception logs, and configuration failures, and stops the server afterward. A filesystem symlink escape case is skipped if the operating system does not allow creating symlinks; the sibling-prefix boundary check always runs.
 
-With --with-client, it runs the 15 existing C# tests plus two integration cases against the actual PHP implementation. A test-only handler maps the C# requests to the local HTTP server. Production HTTPS checks and the production C# transport remain unchanged. This verifies the application contract and downloaded bytes, not production TLS or Apache configuration.
+These local checks verify endpoint behavior and downloaded bytes. Production TLS and Apache configuration require hosting acceptance.
 
 ## Publishing and acceptance
 
-The user has uploaded the three files. The initial authenticated API request returned HTTP 500, and the hosting runtime was confirmed as PHP 7.2.34 without str_starts_with. The shared implementation now uses strpos for prefix checks and explicitly checks json_encode failures instead of JSON_THROW_ON_ERROR.
+The user has uploaded the three files, applied the PHP 7.2 compatibility fix, supplied successful JSON listings, and reported working downloads. This is user-provided production confirmation; exact downloaded bytes, archive validation, and load performance have not been independently measured on production.
 
-Upload the updated common.php to SQLupdate, replacing the initial copy. api.php and download.php need no changes for this fix. No .htaccess change is required by this compatibility fix. Then:
+For future deployments:
 
-1. Confirm PHP execution, HTTPS, root location, and hosting authentication.
-2. Check that unauthenticated requests are rejected.
-3. Call api.php?dir=Barcin_Wodbar with the actual credentials and inspect its JSON.
-4. Download a known ZIP through download.php and verify its bytes and headers.
-5. Run the existing C# CLI list and download commands against that URL.
-6. Connect Tytan to the module and its existing installation flow.
+1. Copy api.php, download.php, and common.php into SQLupdate together.
+2. Keep the working HTTPS and BasicAuth configuration and verify readable package folders.
+3. Check unauthenticated access is rejected.
+4. Check root and client listings and download a known ZIP.
+5. Compare bytes and archive integrity and connect the endpoints to Tytan's application.
 
-Do not treat the local built-in-server tests as verification of the actual hosting configuration.
+No C# source or .NET runtime is required for these PHP endpoints. See uso.md for the exact production URLs and verificacion.md for results.

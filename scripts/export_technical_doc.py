@@ -36,7 +36,7 @@ def export(source, destination):
     code_style.paragraph_format.line_spacing = 1
     for name in ['Title', 'Heading 1', 'Heading 2', 'Heading 3']:
         document.styles[name].font.color.rgb = RGBColor.from_string('17365D')
-    document.core_properties.title = 'Tytan Updater - Technical Code Walkthrough'
+    document.core_properties.title = 'Tytan Updater - PHP Server Technical Documentation'
     document.core_properties.subject = 'Architecture, implementation, code excerpts, and integration'
     document.core_properties.language = 'en-US'
     language = OxmlElement('w:lang')
@@ -89,7 +89,7 @@ def export(source, destination):
         i += 1
 
     header = section.header.paragraphs[0]
-    header.text = 'TYTAN UPDATER | TECHNICAL CODE WALKTHROUGH'
+    header.text = 'TYTAN UPDATER | PHP SERVER TECHNICAL DOCUMENTATION'
     header.runs[0].font.size = Pt(8)
     footer = section.footer.paragraphs[0]
     footer.alignment = 2

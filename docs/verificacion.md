@@ -1,5 +1,7 @@
 # Verification record
 
+Current status: the user has confirmed working production listing and downloading. The current delivery contains PHP only, and the retained 37 endpoint checks passed again on PHP 7.2.34 and PHP 8.5.11 after removing C# dependencies. Earlier sections preserve historical checkpoints.
+
 ## October 5, 2026: live server query
 
 A GET request with BasicAuth was sent to:
@@ -12,7 +14,7 @@ Result: **HTTP 404**. No packages were downloaded. The request did not follow re
 
 At that time, the working assumption was that endpoints were already published. On October 6, the user corrected this: the project must create them. The historical 404 does not validate the new implementation or identify its original cause.
 
-The client was initially tested against the guide's contract. The new PHP endpoints are now exercised locally as recorded below; production hosting and Tytan's application remain unverified.
+This section records historical evidence. Subsequent production confirmation and the current PHP-only scope are recorded below.
 
 ## Local implementation validation
 
@@ -45,3 +47,30 @@ Tytan's actual application is not in the repository: an integration example has 
 - All three files passed syntax checks on actual PHP 7.2.34 and PHP 8.5.11. All 37 endpoint checks passed on each runtime, including a new invalid UTF-8 encoding failure and private-log regression check.
 - All 17 C# tests passed against PHP 7.2.34, including actual listing and ZIP download integration. The filesystem symlink case remains skipped because Windows does not allow creating it in this environment.
 - The compatibility fix has not been uploaded by this agent. Replace the deployed common.php and verify the live listing and download. Production success is not yet confirmed.
+
+## October 6, 2026: user-confirmed production results
+
+After replacing common.php, the user supplied the successful root response:
+
+| Name | Type | Size | Modified (UTC) | Path |
+| --- | --- | --- | --- | --- |
+| Barcin_Wodbar | folder | null | 2026-10-02 06:57:35 | Barcin_Wodbar |
+| barczewo_zwik | folder | null | 2026-10-02 06:57:44 | barczewo_zwik |
+
+The user then supplied api.php?dir=Barcin_Wodbar with these exact entries:
+
+| Name | Type | Size (bytes) | Modified (UTC) | Path |
+| --- | --- | --- | --- | --- |
+| FK2025_005.005.007.zip | file | 11006463 | 2026-10-02 06:57:35 | Barcin_Wodbar/FK2025_005.005.007.zip |
+| FK2026_005.005.040.zip | file | 26190268 | 2026-10-02 06:57:38 | Barcin_Wodbar/FK2026_005.005.040.zip |
+| Faktury_008.000.043.zip | file | 17492922 | 2026-10-02 06:57:29 | Barcin_Wodbar/Faktury_008.000.043.zip |
+
+The user subsequently stated that everything works after the download instructions. Download success is therefore user-reported. The agent has not independently downloaded these production packages or measured their checksum, actual downloaded size, archive integrity, or concurrent performance. The production listing sizes above are exact user-provided metadata, not local test fixtures.
+
+The observed initial 500 was resolved after the PHP 7.2 compatibility fix. Root and client listing now work according to supplied responses. The earlier deployment-pending notes describe the state at their respective historical checkpoints.
+
+## Current PHP-only delivery
+
+At the user's request, src, the C# solution, dependent C# tests, and the optional client test switch were removed. They remain in Git history. Historical 17/17 C# results above describe the earlier implementation, not a test command available in the current checkout.
+
+The retained Python harness tests the three actual PHP files independently of .NET. It verifies 37 endpoint checks on PHP 7.2.34 and PHP 8.5.11 in this Windows environment; the filesystem symlink case is skipped when creating symlinks is unavailable. Tytan's actual version selection and installation remain outside the acceptance performed here.
