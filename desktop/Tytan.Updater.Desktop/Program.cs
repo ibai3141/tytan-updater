@@ -11,7 +11,12 @@ internal static class Program
         if (args.Length > 0 && args[0] == "--self-test")
         {
             int local = DesktopChecks.Run();
-            return local == 0 ? CloudChecks.Run() : local;
+            if (local != 0)
+            {
+                return local;
+            }
+            int comparisons = ComparisonChecks.Run();
+            return comparisons == 0 ? CloudChecks.Run() : comparisons;
         }
 
         if (args.Length == 1 && args[0] == "--verify-live")

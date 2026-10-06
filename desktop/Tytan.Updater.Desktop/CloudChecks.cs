@@ -21,7 +21,7 @@ internal static class CloudChecks
                 Task.Run(CheckTransportAsync).GetAwaiter().GetResult();
             }
             CheckWindow(live);
-            Console.WriteLine(live ? "PASS live desktop API listing. No ZIP was downloaded."
+            Console.WriteLine(live ? "PASS live desktop API listing and version comparison. No ZIP was downloaded."
                 : $"PASS {count} cloud checks using simulated responses. No production request was made.");
             return 0;
         }
@@ -118,6 +118,10 @@ internal static class CloudChecks
             {
                 throw new TaskCanceledException("Simulated deadline.");
             }
+            if (requests == 6)
+            {
+                return Json("[]");
+            }
             return Json(JsonSerializer.Serialize(new[] { Package }));
         }));
         using var api = live ? new CloudApiClient() : new CloudApiClient(http: simulatedHttp);
@@ -140,6 +144,13 @@ internal static class CloudChecks
                 Require(window.CloudEntryCount > 0 && !window.QueryBusy, "Window displays cloud entries and releases busy state");
                 Require(window.ProductCount == 3 && window.DisplayedVersion(0) == "008.000.042",
                     "Cloud listing leaves installed versions unchanged");
+                Require(window.ComparedProductCount == 3 && window.DisplayedStatus("Faktury") != "Not checked",
+                    "Window shows version comparison results for installed products");
+                if (!live)
+                {
+                    Require(window.DisplayedStatus("Faktury") == "Update available" && window.DisplayedStatus("FK2025") == "No package",
+                        "Window distinguishes newer packages and missing products");
+                }
                 Capture(window);
 
                 if (!live)
@@ -147,6 +158,8 @@ internal static class CloudChecks
                     await window.QueryCloudAsync();
                     Require(window.CloudEntryCount == 0 && window.StatusText.Contains("401") && !window.QueryBusy,
                         "Window reports rejected credentials and clears stale cloud results");
+                    Require(window.ComparedProductCount == 0 && window.DisplayedStatus("Faktury") == "Not checked",
+                        "Failed refresh clears stale version comparisons");
                     Task pending = window.QueryCloudAsync();
                     Require(window.QueryBusy, "Pending query enters busy state");
                     window.CancelCloudQuery();
@@ -154,6 +167,18 @@ internal static class CloudChecks
                     Require(window.StatusText == "Cloud request cancelled." && !window.QueryBusy, "Cancellation restores window controls");
                     await window.QueryCloudAsync();
                     Require(window.StatusText.Contains("timed out") && !window.QueryBusy, "Timeout is distinct from user cancellation");
+
+                    DataGridView grid = Descendants(window).OfType<DataGridView>()
+                        .Single(candidate => candidate.Columns.Contains("InstalledVersion"));
+                    grid.Sort(grid.Columns[0], System.ComponentModel.ListSortDirection.Descending);
+                    await window.QueryCloudAsync();
+                    Require((string)grid.Rows[0].Cells[0].Value! != "Faktury" &&
+                        window.DisplayedStatus("Faktury") == "Update available" && window.DisplayedStatus("FK2025") == "No package",
+                        "Sorted rows keep comparison results attached to the correct product");
+                    await window.QueryCloudAsync();
+                    Require(window.ComparedProductCount == 3 && window.StatusText.Contains("empty") &&
+                        new[] { "Faktury", "FK2025", "FK2026" }.All(product => window.DisplayedStatus(product) == "No package"),
+                        "Empty folder shows no package for each product instead of up to date");
                 }
             }
             catch (Exception error)
@@ -170,6 +195,18 @@ internal static class CloudChecks
         if (failure is not null)
         {
             throw failure;
+        }
+    }
+
+    private static IEnumerable<Control> Descendants(Control parent)
+    {
+        foreach (Control child in parent.Controls)
+        {
+            yield return child;
+            foreach (Control nested in Descendants(child))
+            {
+                yield return nested;
+            }
         }
     }
 

@@ -61,13 +61,12 @@ internal static class InstallationFileReader
                 throw new InvalidDataException($"Product '{product.Name}' occurs more than once.");
             }
 
-            if (product.InstalledVersion is null ||
-                !Regex.IsMatch(product.InstalledVersion, @"\A[0-9]{3}\.[0-9]{3}\.[0-9]{3}\z"))
+            if (!PackageVersion.TryParse(product.InstalledVersion, out _))
             {
                 throw new InvalidDataException($"Product '{product.Name}' must have an installedVersion such as 008.000.042.");
             }
 
-            products.Add(new InstalledProduct(product.Name!, product.InstalledVersion));
+            products.Add(new InstalledProduct(product.Name!, product.InstalledVersion!));
         }
 
         return new LocalInstallation(data.ClientFolder!, products.AsReadOnly());

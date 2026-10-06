@@ -94,3 +94,12 @@ The retained Python harness tests the three actual PHP files independently of .N
 - The window displayed FK2025_005.005.007.zip (11006463 bytes), FK2026_005.005.040.zip (26190268 bytes), and Faktury_008.000.043.zip (17492922 bytes), with UTC timestamps and relative paths matching the server listing.
 - Application-only screenshot inspected locally; password was masked. Installed sample versions remained unchanged. No ZIP was downloaded or installed, and no production file or setting was modified.
 - Package comparison and downloading remain the next phases; the real local-file format is still pending.
+
+## October 6, 2026: desktop phase 3 version comparison
+
+- Added PackageVersion and UpdateComparison to select the latest valid product ZIP numerically and compare against the local installed version. Dates do not select versions; unrelated products, folders, malformed filenames, and cross-client entries are excluded.
+- Installed products now shows available versions and Update available, Up to date, Installed version is newer, or No package. Sorting the grid preserves the mapping between a product and its result. Refreshes clear old comparisons, including on errors and cancellation. Example installed data remains explicitly labeled.
+- Release build passed with zero errors and warnings. All 44 checks passed: 10 local installation/window checks, 12 comparison checks, and 22 simulated transport/window checks. New cases include version precedence, product isolation, missing/equal/newer outcomes, unchanged local data, sorted-row results, and empty-folder behavior.
+- A real read-only API query through the desktop application successfully compared the production packages with the example installed versions: Faktury 008.000.042 -> 008.000.043 and FK2026 005.005.039 -> 005.005.040 are updates; FK2025 005.005.007 equals 005.005.007 and is up to date. The example versions are not actual installation detection.
+- The application-only screenshot was visually inspected. Credentials were supplied privately from the original documents and stayed masked; no credential was committed. No ZIP was downloaded or installed, no local installation file was modified, and PHP endpoints were unchanged.
+- Downloading selected newer packages is the next phase. The definitive local installation-file format remains pending.

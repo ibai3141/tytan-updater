@@ -16,12 +16,20 @@ internal sealed class MainForm : Form
     private readonly DataGridView cloudGrid = new();
     private readonly Button openButton = new() { Text = "Open installation file", AutoSize = true, Padding = new Padding(10, 4, 10, 4) };
     private readonly Button exampleButton = new() { Text = "Load example", AutoSize = true, Padding = new Padding(10, 4, 10, 4) };
-    private readonly Button queryButton = new() { Text = "Load cloud folder", AutoSize = true, Enabled = false };
+    private readonly Button queryButton = new() { Text = "Check for updates", AutoSize = true, Enabled = false };
     private readonly Button cancelButton = new() { Text = "Cancel", AutoSize = true, Enabled = false };
     private readonly TextBox usernameBox = new() { Width = 145, Text = Environment.GetEnvironmentVariable("TYTAN_API_USERNAME") ?? "TytanSQL" };
     private readonly TextBox passwordBox = new() { Width = 160, UseSystemPasswordChar = true, Text = Environment.GetEnvironmentVariable("TYTAN_API_PASSWORD") ?? "" };
     private readonly TabControl tabs = new() { Dock = DockStyle.Fill };
     private readonly CloudApiClient api;
+    private readonly Label note = new()
+    {
+        Text = "Checking versions does not download or install updates.",
+        AutoSize = true,
+        ForeColor = Color.DimGray,
+        Margin = new Padding(0)
+    };
+    private IReadOnlyList<ProductUpdate> comparisons = Array.Empty<ProductUpdate>();
     private CancellationTokenSource? queryCancellation;
     private LocalInstallation? installation;
 
@@ -126,13 +134,6 @@ internal sealed class MainForm : Form
 
         statusLabel.Margin = new Padding(0, 14, 0, 8);
         statusLabel.MaximumSize = new Size(910, 0);
-        var note = new Label
-        {
-            Text = "Cloud packages can be listed. Version comparison and downloads will be added next.",
-            AutoSize = true,
-            ForeColor = Color.DimGray,
-            Margin = new Padding(0)
-        };
 
         layout.Controls.Add(heading, 0, 0);
         layout.Controls.Add(clientLabel, 0, 1);
@@ -192,6 +193,7 @@ internal sealed class MainForm : Form
         fileLabel.Text = "Installation file: " + Path.GetFullPath(path);
         productsGrid.Rows.Clear();
         cloudGrid.Rows.Clear();
+        comparisons = Array.Empty<ProductUpdate>();
         tabs.SelectedIndex = 0;
         queryButton.Enabled = true;
 
@@ -203,6 +205,9 @@ internal sealed class MainForm : Form
         statusLabel.Text = example
             ? "Example data loaded. These versions do not describe this computer."
             : $"Loaded {loaded.Products.Count} installed products. Online versions have not been checked.";
+        note.Text = example
+            ? "Installed versions are example data. Checking does not download or install updates."
+            : "Checking versions does not download or install updates.";
     }
 
     internal async Task QueryCloudAsync()
@@ -216,6 +221,7 @@ internal sealed class MainForm : Form
         queryCancellation = cancellation;
         SetQueryBusy(true);
         cloudGrid.Rows.Clear();
+        ResetComparisons();
         statusLabel.Text = "Loading cloud folder: " + installation.ClientFolder + "...";
 
         try
@@ -224,14 +230,17 @@ internal sealed class MainForm : Form
                 installation.ClientFolder, usernameBox.Text, passwordBox.Text, cancellation.Token);
             if (!IsDisposed)
             {
+                comparisons = UpdateComparison.Compare(installation, entries);
+                DisplayComparisons();
                 foreach (RemoteEntry entry in entries)
                 {
                     cloudGrid.Rows.Add(entry.Name, entry.Type, entry.Size?.ToString() ?? "—", entry.Modified, entry.Path);
                 }
-                tabs.SelectedIndex = 1;
+                tabs.SelectedIndex = 0;
+                int updates = comparisons.Count(result => result.Status == UpdateStatus.UpdateAvailable);
                 statusLabel.Text = entries.Count == 0
-                    ? "The client's cloud folder is empty."
-                    : $"Loaded {entries.Count} cloud entries. Versions have not been compared.";
+                    ? "The client's cloud folder is empty. No packages are available."
+                    : $"Checked {comparisons.Count} installed products: {updates} update(s) available. Cloud folder shows all entries.";
             }
         }
         catch (OperationCanceledException)
@@ -259,6 +268,31 @@ internal sealed class MainForm : Form
             {
                 SetQueryBusy(false);
             }
+        }
+    }
+
+    private void ResetComparisons()
+    {
+        comparisons = Array.Empty<ProductUpdate>();
+        foreach (DataGridViewRow row in productsGrid.Rows)
+        {
+            row.Cells[2].Value = "Not checked";
+            row.Cells[3].Value = "Not checked";
+            row.DefaultCellStyle.BackColor = Color.White;
+        }
+    }
+
+    private void DisplayComparisons()
+    {
+        var byName = comparisons.ToDictionary(result => result.Product.Name, StringComparer.OrdinalIgnoreCase);
+        foreach (DataGridViewRow row in productsGrid.Rows)
+        {
+            // Match by product name even when the user has sorted the grid.
+            ProductUpdate result = byName[(string)row.Cells[0].Value!];
+            row.Cells[2].Value = result.AvailableVersion?.ToString() ?? "—";
+            row.Cells[3].Value = result.StatusText;
+            row.DefaultCellStyle.BackColor = result.Status == UpdateStatus.UpdateAvailable
+                ? Color.FromArgb(255, 248, 220) : Color.White;
         }
     }
 
@@ -298,6 +332,9 @@ internal sealed class MainForm : Form
     internal int CloudEntryCount => cloudGrid.Rows.Count;
     internal string StatusText => statusLabel.Text;
     internal bool QueryBusy => queryCancellation is not null;
+    internal int ComparedProductCount => comparisons.Count;
+    internal string DisplayedStatus(string product) => (string)productsGrid.Rows.Cast<DataGridViewRow>()
+        .Single(row => (string)row.Cells[0].Value! == product).Cells[3].Value!;
 
     // Small inspection surface for the window smoke check, without network access.
     internal string? LoadedClient => installation?.ClientFolder;
