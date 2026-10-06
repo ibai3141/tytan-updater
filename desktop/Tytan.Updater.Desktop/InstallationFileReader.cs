@@ -73,7 +73,7 @@ internal static class InstallationFileReader
         return new LocalInstallation(data.ClientFolder!, products.AsReadOnly());
     }
 
-    private static bool ValidName(string? name)
+    internal static bool ValidName(string? name)
     {
         // One folder/name segment: never accept an absolute path or traversal.
         return !string.IsNullOrWhiteSpace(name) && name[0] != '.' &&

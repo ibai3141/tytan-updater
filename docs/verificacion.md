@@ -84,3 +84,13 @@ The retained Python harness tests the three actual PHP files independently of .N
 - All 10 desktop checks passed: example parsing, malformed JSON, traversal, malformed versions, duplicate/empty/null products, unexpected fields, window grid values, and preserving valid state after an invalid replacement.
 - The actual form was opened by the smoke check and captured via DrawToBitmap for visual inspection. The capture contains only this application's window and is stored in ignored downloads/.
 - No API requests, production changes, downloads, installations, credential persistence, or installation-file writes occur in this phase. PHP endpoint behavior was not changed.
+
+## October 6, 2026: desktop phase 2 cloud listing
+
+- Added asynchronous HTTPS BasicAuth access to api.php?dir=<loaded-clientFolder>, with no root-client enumeration. PHP endpoints were not changed.
+- The window has masked in-memory credentials, Installed products and Cloud folder tabs, loading state, cancellation, and English status errors. Credential/files controls are disabled while querying. No password is embedded or saved.
+- Release build passed without errors or warnings. All 10 previous local checks and 17 new simulated cloud checks passed, covering encoded query names, BasicAuth, metadata, HTTP 401/404/500, redirect rejection, invalid JSON/path/metadata, empty folders, invalid input, HTML responses, HTTPS, window results, preservation of installed versions, busy state, cancellation, and timeout.
+- A real read-only verification queried https://tytan.poznan.pl/SQLupdate/api.php?dir=Barcin_Wodbar through the new desktop client. Credentials were read privately from the original documents and supplied only to the verification process; they were not printed or stored in the repository.
+- The window displayed FK2025_005.005.007.zip (11006463 bytes), FK2026_005.005.040.zip (26190268 bytes), and Faktury_008.000.043.zip (17492922 bytes), with UTC timestamps and relative paths matching the server listing.
+- Application-only screenshot inspected locally; password was masked. Installed sample versions remained unchanged. No ZIP was downloaded or installed, and no production file or setting was modified.
+- Package comparison and downloading remain the next phases; the real local-file format is still pending.

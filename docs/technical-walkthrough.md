@@ -2,7 +2,7 @@
 
 Updated: October 6, 2026.
 
-This document describes the delivered PHP server, its source code, deployment, integration contract, and observed results. The previous C# library/CLI prototype was removed at the user's request. A later clarification introduces a local Windows application, developed incrementally under desktop/. Its phase 1 window and provisional local installation file are documented separately in desktop.md. This guide remains the PHP server reference.
+This document describes the delivered PHP server, its source code, deployment, integration contract, and observed results. The previous C# library/CLI prototype was removed at the user's request. A later clarification introduces a local Windows application, developed incrementally under desktop/. Its local-file window and phase 2 HTTPS cloud listing are documented separately in desktop.md. This guide remains the PHP server reference.
 
 ## 1. Purpose and responsibilities
 

@@ -19,7 +19,25 @@ Implemented:
 - Show English errors and preserve the last valid data on a failed replacement.
 - Keep JSON mapping in InstallationFileReader so the final format can be substituted.
 
-No API call, credentials, remote version comparison, download, or installation is implemented in this phase. Available-version and status cells show Not checked. Loading the example does not detect actual installations on this computer and does not modify the local file.
+Phase 1 originally made no API calls. Phase 2 now adds the cloud listing described below. Comparison, downloads, and installation are not yet implemented. Available-version and status cells show Not checked. Loading the example does not detect actual installations on this computer and does not modify the local file.
+
+## Phase 2: HTTPS cloud-folder listing
+
+Load an installation file or the example first. Enter the shared username and password, then click Load cloud folder. The request is:
+
+```text
+https://tytan.poznan.pl/SQLupdate/api.php?dir=<loaded-clientFolder>
+```
+
+The application never fetches the root client list. Folder values are URL-encoded. The Cloud folder tab displays name, type, size in bytes, modification timestamp in UTC, and relative path. An empty folder is reported explicitly. Installed products and versions remain unchanged.
+
+The password is masked and retained only in process memory; it is not embedded in source or saved to disk. The username defaults to TytanSQL; enter the existing password supplied by the administrator. Optional private process variables TYTAN_API_USERNAME and TYTAN_API_PASSWORD can prefill the fields. Do not commit credential files.
+
+Local-file and credential controls are disabled during a query to prevent changing the client mid-request. Cancel stops the query; closing the window also cancels it. Each new query clears stale cloud results. Errors appear in the status label, leaving valid installed data unchanged; controls are restored afterward.
+
+The 30-second deadline covers both headers and body reading. Automatic redirects are disabled, HTTPS is required, and standard certificate validation remains enabled. HTTP failures, malformed/non-JSON responses, invalid metadata, duplicate entries, and paths outside the loaded folder are rejected. Listings are limited to 8 MiB. Numeric version comparison is not performed yet.
+
+Client-side folder selection remains the expressly requested shared-account design; it does not restrict other callers who have the same credentials.
 
 ## Provisional input contract
 
@@ -47,7 +65,7 @@ cd C:\Users\Ibai\tytan-updater
 dotnet run --project desktop/Tytan.Updater.Desktop --configuration Release
 ```
 
-Click Load example to view the sample client and its three products. Open installation file selects your own compatible file. An optional positional argument loads a specified file on startup:
+Click Load example to view the sample client and its three products. Enter the shared account password and click Load cloud folder to query real remote metadata for that example client. Installed-version values remain illustrative. Open installation file selects your own compatible file. An optional positional argument loads a specified file on startup:
 
 ```powershell
 dotnet run --project desktop/Tytan.Updater.Desktop --configuration Release -- examples/installation.example.json
@@ -60,9 +78,11 @@ The compiled executable is desktop/Tytan.Updater.Desktop/bin/Release/net9.0-wind
 | File | Responsibility |
 | --- | --- |
 | Program.cs | Initialize WinForms and optional startup file; dispatch self-test mode |
-| MainForm.cs | Local file selection, example loading, product grid, errors |
+| MainForm.cs | File selection, credentials, installed/cloud tabs, async queries, cancellation, errors |
 | InstallationFileReader.cs | Parse and validate the provisional file into local installation models |
-| DesktopChecks.cs | Check real file parsing and window state without network traffic |
+| CloudApiClient.cs | HTTPS BasicAuth query, JSON/path validation, deadline, cancellation |
+| DesktopChecks.cs | Local file parsing and window checks |
+| CloudChecks.cs | Simulated transport/window checks and optional real read-only verification |
 
 ## Verification
 
@@ -71,13 +91,22 @@ dotnet build desktop/Tytan.Updater.Desktop --configuration Release
 dotnet run --project desktop/Tytan.Updater.Desktop --configuration Release --no-build -- --self-test
 ```
 
-The self-test briefly opens the actual window and checks the sample file, malformed JSON, folder traversal, malformed versions, duplicate/empty/null products, unexpected fields, rendered grid values, and preservation of valid data after an invalid replacement. It makes no network requests.
+The self-test briefly opens the actual window and checks the sample file, malformed JSON, folder traversal, malformed versions, duplicate/empty/null products, unexpected fields, rendered grid values, and preservation of valid data after an invalid replacement. The additional 17 cloud checks use an injected HTTP handler for query encoding/BasicAuth, metadata, HTTP failures, redirects, empty folders, validation, HTTPS, window states, cancellation, and timeout. The self-test makes no production requests.
+
+## Optional real API verification
+
+Supply TYTAN_API_USERNAME and TYTAN_API_PASSWORD privately to the process, then run:
+
+```powershell
+dotnet run --project desktop/Tytan.Updater.Desktop --configuration Release --no-build -- --verify-live
+```
+
+This briefly opens the window, queries the example client Barcin_Wodbar, verifies entries are displayed and installed versions stay unchanged, then closes. It never downloads ZIPs. Phase 2 successfully displayed three real production packages. Set TYTAN_DESKTOP_CAPTURE to an output PNG path to capture only this application's window during verification; the password remains masked.
 
 ## Next phases
 
-1. Connect the shared BasicAuth account to HTTPS API requests using the loaded clientFolder, not a root-client listing. Add timeout, cancellation, and HTTP/JSON errors. Do not embed the password in source or the installation example.
-2. Select the newest package independently for each installed product and compare numeric versions. Display Update available, Up to date, or No package.
-3. Download selected newer ZIPs to an explicit destination; verify completion, sizes, and ZIP readability. A download does not change the recorded installed version.
-4. Adapt the reader to the definitive local file and confirm how Tytan applies packages and maintains that file after successful installation.
+1. Select the newest package independently for each installed product and compare numeric versions. Display Update available, Up to date, or No package.
+2. Download selected newer ZIPs to an explicit destination; verify completion, sizes, and ZIP readability. A download does not change the recorded installed version.
+3. Adapt the reader to the definitive local file and confirm how Tytan applies packages and maintains that file after successful installation.
 
-The first phase is deliberately limited so the interface and the local-file contract can be reviewed before adding cloud access.
+Phases 1 and 2 deliver the local installation data and cloud listing. Comparison and downloading are the next separate phases.

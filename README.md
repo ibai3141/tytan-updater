@@ -4,9 +4,9 @@ PHP endpoints for distributing TytanSQL update ZIPs over HTTPS with BasicAuth. T
 
 The repository delivers the PHP server and now starts a local Windows updater, following the clarified request to read client information and installed versions from the customer's computer. The earlier C# library/CLI prototype was removed; the new desktop application is developed incrementally under desktop/.
 
-## Local Windows application: phase 1
+## Local Windows application: phases 1 and 2
 
-The first desktop phase opens a local installation JSON file and displays the client folder, products, and installed versions. Click Load example to try the provisional format. It does not contact the API or download packages yet.
+The desktop application opens a local installation JSON file and displays the client folder, products, and installed versions. Click Load example to try the provisional format, enter the shared account credentials, then click Load cloud folder. It queries that client's API directory and shows the available ZIP metadata in the Cloud folder tab. Version comparison and downloads are not implemented yet.
 
 ```powershell
 dotnet run --project desktop/Tytan.Updater.Desktop --configuration Release

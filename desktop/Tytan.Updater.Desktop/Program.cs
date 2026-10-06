@@ -10,7 +10,13 @@ internal static class Program
         // A smoke check exercises real file parsing and real WinForms controls.
         if (args.Length > 0 && args[0] == "--self-test")
         {
-            return DesktopChecks.Run();
+            int local = DesktopChecks.Run();
+            return local == 0 ? CloudChecks.Run() : local;
+        }
+
+        if (args.Length == 1 && args[0] == "--verify-live")
+        {
+            return CloudChecks.Run(live: true);
         }
 
         if (args.Length > 1 || (args.Length == 1 && args[0].StartsWith("--")))
