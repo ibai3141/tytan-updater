@@ -36,7 +36,7 @@ Remove-Item Env:TYTAN_USERNAME, Env:TYTAN_PASSWORD
 
 Environment variables are an option for this CLI; Tytan can supply credentials through its own configuration. `TYTAN_BASE_URL` allows a different published path if the actual address differs from the documents.
 
-The live query on October 5 returned HTTP 404 at the documented address. See [Verification record](verificacion.md). Check that path before expecting a live download; local tests do not validate server publication.
+The live query on October 5 returned HTTP 404. On October 6 the scope was corrected: this project must provide the PHP endpoints. They are implemented and tested locally, but must be deployed before using these server commands. See [PHP deployment](server.md) and [Verification record](verificacion.md).
 
 `list` does not download files. `download` checks and downloads only if a newer version of the product is available. Press Ctrl+C to cancel. Exit codes:
 
@@ -103,5 +103,7 @@ switch (result.Status)
 src/Tytan.Updater/         C# library
 src/Tytan.Updater.Cli/     CLI tool and demo
 tests/Tytan.Updater.Tests/ Local tests without a live server
+server/                   PHP endpoints and shared helper
+tests/server/             Actual-PHP endpoint and client integration tests
 docs/                     Requirements, phases, usage, and verification
 ```

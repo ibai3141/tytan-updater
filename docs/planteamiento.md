@@ -1,10 +1,10 @@
 # Checking and downloading TytanSQL updates
 
-Updated: October 5, 2026.
+Updated: October 6, 2026.
 
 ## 1. Objective and scope
 
-Implement a C# module that TytanSQL can call to query a client's folder, detect a newer product version, and download its ZIP to a local folder.
+Implement the PHP server endpoints api.php and download.php, plus the C# module that TytanSQL calls to query a client folder, detect a newer product version, and download its ZIP to a local folder. Hosting deployment is pending.
 
 Tytan applies the package and manages the installed version. Our module finishes by returning the complete file and its result. It does not inspect the installation, extract packages, replace executables, execute SQL, or implement installation backups or recovery.
 
@@ -18,11 +18,11 @@ There is enough information to start: the language, authentication, endpoints, J
 | `SQl_Update_Projekt_v_1.1.docx` | The folder contains ZIPs of the latest versions of all the client's products |
 | `Connect to your SQLupdate directory on the Idea server.docx` | C#, HttpClient, BasicAuth, JSON listing, and downloading; client and server examples |
 | `Kopia zapasowa ... .wbk` | A shorter backup of the guide without additional requirements |
-| User, October 5, 2026 | API and download endpoints already published; use the available environment; Tytan handles the subsequent process |
+| User, October 6, 2026 | Correction: this project must create both PHP endpoints; use the available environment; Tytan handles installation |
 
 The originals are in `F:\SQL_Update`. The `.~lock....docx#` file is temporary. Credentials are not copied into the repository.
 
-The user confirms the endpoints are published. The live query on October 5 to `api.php?dir=Barcin_Wodbar` returned HTTP 404; see [Verification record](verificacion.md). The examples below describe the guide rather than captured server responses. The library and CLI are implemented; see [Usage](uso.md).
+The earlier assumption that endpoints were published was corrected on October 6. PHP and C# implementations are now tested together locally; production deployment remains pending. The October 5 HTTP 404 is recorded in [Verification record](verificacion.md). See [PHP server](server.md) for deployment and [Usage](uso.md) for the client. JSON values below are illustrative.
 
 ## 3. Responsibilities
 
@@ -33,7 +33,7 @@ The user confirms the endpoints are published. The live query on October 5 to `a
 | Decide when to check for updates | Report no update, download completion, cancellation, or error |
 | Install the package and record the installed version | Return the local path and downloaded package version |
 
-## 4. Published API
+## 4. PHP API to deploy
 
 Base URL: `https://tytan.poznan.pl/SQLupdate/`.
 
@@ -80,7 +80,7 @@ GET /SQLupdate/download.php?file=Barcin_Wodbar/Faktury_008.000.043.zip
 
 Use the selected file's `path` field and encode query parameter values. Keep requests within the configured base URL.
 
-The documented PHP returns binary content with an `application/octet-stream` content type, a download filename, and a size. This project does not need to develop or publish PHP.
+The implemented download.php returns binary content with an application/octet-stream content type, a download filename, and an actual file size. api.php returns folders and ZIP packages while excluding dotfiles and non-package files. common.php supplies authentication, HTTPS, path validation, and JSON errors. The three files must be placed in SQLupdate; see [PHP server](server.md).
 
 ## 5. Proposed contract with Tytan
 
@@ -197,7 +197,7 @@ Use the available .NET environment and adjust compatibility during integration. 
 | 3. Download and delivery | Temporary file, validation, and local path | Return a complete ZIP or a clear failure; never present a partial file as ready |
 | 4. Integration | Connect the call and output path to Tytan | Tytan receives the result and continues its existing workflow |
 
-The local implementation and CLI are delivered. Live contract verification and connection to Tytan's actual application remain pending.
+The client, CLI, and PHP server implementation are delivered and tested together locally. Hosting deployment, production verification, and connection to Tytan's actual application remain pending.
 
 ## 11. Required verification
 
@@ -217,7 +217,7 @@ Rules can be tested locally with sample responses and ZIPs. Live testing verifie
 
 - The exact calling interface and compatibility with Tytan's .NET project.
 - How credentials and the local destination are provided in the application.
-- Actual error responses, the published endpoint path, and real package names.
+- Hosting configuration and deployment of the PHP endpoints, followed by production response and package verification.
 - How Tytan handles existing ZIPs and consumes diagnostic results.
 
-These details do not prevent local development. Adjust the contract during integration and verification of the published API.
+These details do not prevent local development. The implemented PHP/C# contract has been checked locally; verify it again after hosting deployment and Tytan integration.

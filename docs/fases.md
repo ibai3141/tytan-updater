@@ -9,7 +9,7 @@ Each phase ends with a build, appropriate checks, and a commit in Spanish, as re
 | 3. Downloads | Temporary ZIP, validation, and result returned to Tytan | Sample ZIP, interruptions, cancellation, and existing destinations | `63d7037` |
 | 4. Usage and integration | CLI tool and C# integration example | Complete local execution and usage documentation | `585b658` |
 
-The implementation uses .NET 9, available on the development machine, without external dependencies. Tests run as a local executable that returns a nonzero exit code if any case fails. They do not need access to the production server.
+The C# implementation uses .NET 9, available on the development machine, without external dependencies. The server implementation uses PHP 8.x. Tests run as a local executable that returns a nonzero exit code if any case fails. They do not need access to the production server.
 
 Integration with Tytan is provided as an example and a contract: its application is not in this repository. Live endpoint verification is recorded separately from local tests and is only claimed when actually performed.
 
@@ -21,3 +21,7 @@ Integration with Tytan is provided as an example and a contract: its application
 - Phase 4: CLI commands `list`, `download`, and `demo`, usage instructions, and an integration example. Connecting the module to Tytan's actual application remains pending in its project.
 
 Console help and application-defined result messages were subsequently translated into English in commit `bec6b20`.
+
+## Phase 5: PHP endpoints after the scope correction
+
+On October 6, the user clarified that this project must also create api.php and download.php. This phase adds those endpoints, common.php, an Apache configuration example, deployment instructions, and actual-PHP tests with C# integration. Local implementation is complete; hosting deployment and production verification remain pending. See [PHP server](server.md).

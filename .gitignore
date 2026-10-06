@@ -6,3 +6,5 @@ downloads/
 *.user
 *.local.json
 .env
+.htpasswd
+server/.htaccess

@@ -289,6 +289,9 @@ AsyncTest("Invalid input produces an error without any HTTP request", () => With
     Equal(UpdateStatus.Error, result.Status);
 }));
 
+// Register real-PHP cases only when the local server harness supplies its address.
+PhpIntegrationTests.Register(AsyncTest);
+
 // Run every registered case; a nonzero exit code means at least one failed.
 var failed = 0;
 foreach (var test in tests)

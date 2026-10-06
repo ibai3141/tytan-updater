@@ -1,0 +1,20 @@
+# Example for Apache hosting. Merge with the hosting configuration; do not overwrite it blindly.
+# Replace AuthUserFile with an absolute path outside the public document root.
+Options -Indexes
+
+AuthType Basic
+AuthName "Tytan SQLupdate"
+AuthUserFile /ABSOLUTE/PRIVATE/PATH/.htpasswd
+
+<RequireAll>
+    Require valid-user
+    Require expr "%{HTTPS} == 'on'"
+</RequireAll>
+
+<Files "common.php">
+    Require all denied
+</Files>
+
+<FilesMatch "\.(ini|log|env|example)$">
+    Require all denied
+</FilesMatch>

@@ -2,7 +2,17 @@
 
 A C# module for TytanSQL that checks for updates over HTTPS, compares versions, and downloads the latest ZIP when it is newer than the installed version. Tytan handles installation.
 
-The repository contains a .NET 9 library, a command-line tool, and local tests without external dependencies.
+The repository contains a .NET 9 client library, a command-line tool, PHP server endpoints, and local tests. The PHP endpoints must be deployed to the hosting server.
+
+## PHP server
+
+The corrected scope includes creating the server API. Upload `server/api.php`, `server/download.php`, and `server/common.php` to the hosting SQLupdate directory and configure HTTPS and authentication. See [Server setup and deployment](docs/server.md).
+
+Local server and client integration tests, with PHP available:
+
+```powershell
+python tests/server/test_endpoints.py --with-client
+```
 
 ## Technical code walkthrough
 
@@ -31,7 +41,7 @@ The demo creates a sample ZIP without contacting the server. See [Usage and inte
 - `api.php` lists files and folders as JSON.
 - `api.php?dir=<folder>` lists a client's folder.
 - `download.php?file=<relative-path>` downloads a file.
-- The user confirms both endpoints are already published.
+- This repository provides both PHP endpoints and their shared helper; hosting deployment is pending.
 - Each client's folder contains packages for the products they own.
 - Tytan supplies the client folder, product, and installed version.
 - The module returns the downloaded ZIP's local path and version.
@@ -62,6 +72,6 @@ See [Technical design](docs/planteamiento.md) for the contract, endpoints, and r
 
 ## Sources and status
 
-The documents reviewed in `F:\SQL_Update` include project v1.0, project v1.1, the HTTPS + BasicAuth integration guide, and its backup. The scope reflects the user's confirmations on October 5, 2026.
+The documents reviewed in `F:\SQL_Update` include project v1.0, project v1.1, the HTTPS + BasicAuth integration guide, and its backup. The scope includes the October 6, 2026 correction: this project must create the PHP API and download endpoints.
 
-The user confirms the endpoints are published. The live request to `api.php?dir=Barcin_Wodbar` on October 5 returned HTTP 404, so the published path still needs to be checked. See [Verification record](docs/verificacion.md). Credentials are configured outside the repository.
+The earlier assumption that the endpoints were already published was corrected on October 6. The October 5 request returned HTTP 404; the new PHP files have now been tested locally but have not been uploaded to the hosting server. See [Verification record](docs/verificacion.md). Credentials are configured outside the repository.

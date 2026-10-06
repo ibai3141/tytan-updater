@@ -1,10 +1,10 @@
 # Tytan Updater - Technical Code Walkthrough
 
-Date: October 5, 2026.
+Date: October 6, 2026.
 
 Audience: developers learning the project or connecting the module to TytanSQL.
 
-This guide explains the current implementation, with excerpts copied from its C# source files. Excerpts may omit surrounding declarations and are not all standalone programs. The integration example uses placeholder variables provided by Tytan.
+This guide explains the client and PHP server implementation, with excerpts copied from their source files. Excerpts may omit surrounding declarations and are not all standalone programs. The integration example uses placeholder variables provided by Tytan.
 
 ## 1. What the application does
 
@@ -12,12 +12,16 @@ Tytan supplies the client folder, product, installed version, and local destinat
 
 The module does not discover the installed version automatically, install files, execute SQL, or change Tytan's installed-version record. There is a command-line interface, not a graphical window.
 
-The live request to the documented listing endpoint returned HTTP 404 on October 5. Local tests validate the documented contract, not the live server or installation inside Tytan.
+The live listing request returned HTTP 404 on October 5. On October 6, the scope was corrected to include creating the PHP endpoints. They now work with the C# client in local integration tests, but have not been published to the hosting server. Installation inside Tytan remains outside this repository.
 
 ## 2. Repository map
 
 | File or project | Responsibility |
 | --- | --- |
+| `server/api.php` | List client folders and ZIP packages as JSON |
+| `server/download.php` | Stream a selected ZIP package |
+| `server/common.php` | Authentication, HTTPS, path validation, and error responses |
+| `tests/server/test_endpoints.py` | Exercise actual PHP with temporary fixtures and optional C# integration |
 | `src/Tytan.Updater/Models.cs` | Request, response, remote file, and package data |
 | `src/Tytan.Updater/UpdateService.cs` | Coordinate the complete operation |
 | `src/Tytan.Updater/UpdateApiClient.cs` | HTTPS, authentication, JSON listing, and HTTP errors |
@@ -747,8 +751,8 @@ The demo creates Demo_001.000.002.zip. Repeating it with the same destination re
 
 ## 16. Current limits and next steps
 
-- Confirm the exact API and download paths because the documented listing URL returned HTTP 404.
-- Validate the actual JSON and package naming against the production server before claiming live compatibility.
+- Deploy the three PHP files to SQLupdate and configure HTTPS and BasicAuth; the new endpoints have not been published yet.
+- Validate the deployed JSON and package naming against production; local PHP/C# integration passes but does not validate hosting.
 - Check the library's .NET compatibility with Tytan's project and connect the request/result contract to its existing update workflow.
 - Tytan supplies the installed version and applies the ZIP; there is no graphical UI in this repository.
 - There are no automatic retries, download resume, package hash/signature verification, or automatic replacement of existing ZIPs.
@@ -756,3 +760,155 @@ The demo creates Demo_001.000.002.zip. Repeating it with the same destination re
 - Reading a ZIP confirms readability, not product compatibility or successful installation.
 
 Suggested reading order: Models.cs, UpdateService.cs, UpdateApiClient.cs, PackageSelector.cs, PackageVersion.cs, PackageDownload.cs, then the CLI and tests.
+
+## 17. PHP server - listing and downloading
+
+The PHP implementation is the server half of the contract. api.php lists folders and ZIP packages; download.php streams a selected ZIP. common.php shares authentication, HTTPS checks, canonical-path validation, and JSON error handling. The C# module still selects versions and Tytan still installs packages.
+
+### Listing a client folder
+
+Source: `server/api.php`
+
+```php
+<?php
+declare(strict_types=1);
+
+define('TYTAN_ENDPOINT', true);
+require __DIR__ . '/common.php';
+
+$base = bootstrap();
+$relative = query_path('dir', true);
+$target = resolve_target($base, $relative);
+
+if (!is_dir($target) || !is_readable($target)) {
+    fail_request(404, 'Directory not found or not readable.');
+}
+
+$items = scandir($target);
+if ($items === false) {
+    fail_request(500, 'The directory could not be listed.');
+}
+
+$result = [];
+foreach ($items as $name) {
+    // Publish folders and ZIP packages, never PHP source, configuration or dotfiles.
+    if (!public_name($name)) {
+        continue;
+    }
+
+    $path = realpath($target . DIRECTORY_SEPARATOR . $name);
+    if ($path === false || !inside_root($path, $base) || !is_readable($path)) {
+        continue;
+    }
+
+    $folder = is_dir($path);
+    if (!$folder && (!is_file($path) || strtolower(pathinfo($name, PATHINFO_EXTENSION)) !== 'zip')) {
+        continue;
+    }
+
+    $size = $folder ? null : filesize($path);
+    $modified = filemtime($path);
+    if ($size === false || $modified === false) {
+        fail_request(500, 'Package metadata could not be read.');
+    }
+
+    // Match the lowercase JSON contract used by FileEntry in the C# client.
+    $result[] = [
+        'name' => $name,
+        'type' => $folder ? 'folder' : 'file',
+        'size' => $size,
+        'modified' => gmdate('Y-m-d H:i:s', $modified),
+        'path' => ($relative === '' ? '' : $relative . '/') . $name,
+    ];
+}
+
+send_json($result);
+```
+
+bootstrap() checks request method, HTTPS, authentication, and the update root. query_path() validates the relative directory; resolve_target() resolves it and verifies containment. The endpoint excludes hidden and non-package files, then returns the lowercase fields expected by FileEntry. Dates are UTC and do not decide which version the client downloads.
+
+### Downloading package bytes
+
+Source: `server/download.php`
+
+```php
+<?php
+declare(strict_types=1);
+
+define('TYTAN_ENDPOINT', true);
+require __DIR__ . '/common.php';
+
+$base = bootstrap();
+$relative = query_path('file', false);
+$target = resolve_target($base, $relative);
+
+// The download endpoint serves update packages only, not arbitrary server files.
+if (!is_file($target) || !is_readable($target) ||
+    strtolower(pathinfo($relative, PATHINFO_EXTENSION)) !== 'zip' ||
+    strtolower(pathinfo($target, PATHINFO_EXTENSION)) !== 'zip') {
+    fail_request(404, 'ZIP package not found.');
+}
+
+$stream = fopen($target, 'rb');
+if ($stream === false) {
+    fail_request(500, 'The package could not be opened.');
+}
+
+try {
+    // Read size from the open handle so Content-Length describes the streamed file.
+    $stat = fstat($stream);
+    if ($stat === false) {
+        fail_request(500, 'Package metadata could not be read.');
+    }
+
+    $name = basename($relative);
+    $fallback = preg_replace('/[^A-Za-z0-9._-]/', '_', $name);
+    header('Content-Type: application/octet-stream');
+    header('Content-Disposition: attachment; filename="' . $fallback . '"; filename*=UTF-8\'\'' . rawurlencode($name));
+    header('Content-Length: ' . $stat['size']);
+    header('Cache-Control: no-store');
+    header('X-Content-Type-Options: nosniff');
+
+    // Disable PHP output buffering/compression to preserve byte counts and stream.
+    ini_set('zlib.output_compression', '0');
+    while (ob_get_level() > 0) {
+        if (!ob_end_clean()) {
+            break;
+        }
+    }
+
+    if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'HEAD') {
+        fpassthru($stream);
+    }
+} finally {
+    fclose($stream);
+}
+```
+
+The endpoint opens only a readable ZIP inside the update root, reads its size from the open handle, sends download headers, and streams the bytes. HEAD returns metadata without the body. It does not load the whole package into memory, inspect product versions, or extract and install files.
+
+### Keeping paths inside SQLupdate
+
+Source: `server/common.php`
+
+```php
+function inside_root(string $path, string $base): bool
+{
+    // A separator boundary prevents SQLupdate-other from matching SQLupdate.
+    return $path === $base || str_starts_with($path, rtrim($base, '/\\') . DIRECTORY_SEPARATOR);
+}
+
+function resolve_target(string $base, string $relative): string
+{
+    $target = realpath($base . DIRECTORY_SEPARATOR . $relative);
+    if ($target === false || !inside_root($target, $base)) {
+        fail_request(404, 'File or directory not found.');
+    }
+
+    return $target;
+}
+```
+
+The separator boundary distinguishes SQLupdate from SQLupdate-other. realpath resolves filesystem links before the containment check. Invalid path syntax is rejected earlier by query_path. Authentication either uses trusted hosting BasicAuth through REMOTE_USER or configured TYTAN_API_USERNAME/TYTAN_API_PASSWORD values; missing configuration fails closed.
+
+Local server tests use temporary packages and PHP processes, including real C# listing and downloading. They are separate from production deployment. See docs/server.md for configuration, deployment, error statuses, and test commands.
