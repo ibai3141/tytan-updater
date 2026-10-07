@@ -36,6 +36,7 @@ Deploy the three PHP files to SQLupdate. Keep the hosting's working authenticati
 - [Implementation phases](docs/fases.md)
 - [Results and verification history](docs/verificacion.md)
 - [Local Windows application](docs/desktop.md)
+- [Installation integration contract and pending inputs](docs/installation-contract.md)
 
 ## Production URLs
 
