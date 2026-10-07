@@ -18,27 +18,32 @@ internal sealed class MainForm : Form
     private readonly Button exampleButton = new() { Text = "Load example", AutoSize = true, Padding = new Padding(10, 4, 10, 4) };
     private readonly Button queryButton = new() { Text = "Check for updates", AutoSize = true, Enabled = false };
     private readonly Button cancelButton = new() { Text = "Cancel", AutoSize = true, Enabled = false };
+    private readonly Button downloadButton = new()
+    {
+        Text = "Download selected update", AutoSize = true, Enabled = false, Margin = new Padding(0, 12, 0, 8)
+    };
+    private readonly ProgressBar downloadProgress = new() { Dock = DockStyle.Fill, Height = 14, Visible = false };
     private readonly TextBox usernameBox = new() { Width = 145, Text = Environment.GetEnvironmentVariable("TYTAN_API_USERNAME") ?? "TytanSQL" };
     private readonly TextBox passwordBox = new() { Width = 160, UseSystemPasswordChar = true, Text = Environment.GetEnvironmentVariable("TYTAN_API_PASSWORD") ?? "" };
     private readonly TabControl tabs = new() { Dock = DockStyle.Fill };
     private readonly CloudApiClient api;
     private readonly Label note = new()
     {
-        Text = "Checking versions does not download or install updates.",
+        Text = "Downloading a ZIP does not install updates.",
         AutoSize = true,
         ForeColor = Color.DimGray,
         Margin = new Padding(0)
     };
     private IReadOnlyList<ProductUpdate> comparisons = Array.Empty<ProductUpdate>();
-    private CancellationTokenSource? queryCancellation;
+    private CancellationTokenSource? operationCancellation;
     private LocalInstallation? installation;
 
     public MainForm(string? initialFile = null, CloudApiClient? api = null)
     {
         this.api = api ?? new CloudApiClient();
         Text = "Tytan Updater";
-        ClientSize = new Size(980, 640);
-        MinimumSize = new Size(900, 530);
+        ClientSize = new Size(980, 700);
+        MinimumSize = new Size(900, 600);
         StartPosition = FormStartPosition.CenterScreen;
         Font = new Font("Segoe UI", 10);
         AutoScaleMode = AutoScaleMode.Dpi;
@@ -48,7 +53,7 @@ internal sealed class MainForm : Form
             Dock = DockStyle.Fill,
             Padding = new Padding(22),
             ColumnCount = 1,
-            RowCount = 8
+            RowCount = 10
         };
 
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -57,6 +62,8 @@ internal sealed class MainForm : Form
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
@@ -91,7 +98,10 @@ internal sealed class MainForm : Form
         connection.Controls.Add(queryButton);
         connection.Controls.Add(cancelButton);
         queryButton.Click += async (_, _) => await QueryCloudAsync();
-        cancelButton.Click += (_, _) => queryCancellation?.Cancel();
+        cancelButton.Click += (_, _) => operationCancellation?.Cancel();
+        downloadButton.Click += async (_, _) => await ChooseDownloadAsync();
+        productsGrid.SelectionChanged += (_, _) => UpdateDownloadButton();
+        tabs.SelectedIndexChanged += (_, _) => UpdateDownloadButton();
 
         productsGrid.Dock = DockStyle.Fill;
         productsGrid.ReadOnly = true;
@@ -141,8 +151,10 @@ internal sealed class MainForm : Form
         layout.Controls.Add(buttons, 0, 3);
         layout.Controls.Add(connection, 0, 4);
         layout.Controls.Add(tabs, 0, 5);
-        layout.Controls.Add(statusLabel, 0, 6);
-        layout.Controls.Add(note, 0, 7);
+        layout.Controls.Add(downloadButton, 0, 6);
+        layout.Controls.Add(downloadProgress, 0, 7);
+        layout.Controls.Add(statusLabel, 0, 8);
+        layout.Controls.Add(note, 0, 9);
         Controls.Add(layout);
 
         if (initialFile is not null)
@@ -173,7 +185,7 @@ internal sealed class MainForm : Form
         {
             LoadInstallation(path, example);
         }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        catch (Exception error) when (error is IOException or InvalidDataException or UnauthorizedAccessException)
         {
             statusLabel.Text = "The file could not be loaded. Previously loaded data is unchanged.";
             MessageBox.Show(this, error.Message, "Installation file error", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -182,7 +194,7 @@ internal sealed class MainForm : Form
 
     internal void LoadInstallation(string path, bool example)
     {
-        if (queryCancellation is not null)
+        if (operationCancellation is not null)
         {
             throw new InvalidOperationException("Wait for the current cloud request or cancel it before loading another file.");
         }
@@ -194,6 +206,7 @@ internal sealed class MainForm : Form
         productsGrid.Rows.Clear();
         cloudGrid.Rows.Clear();
         comparisons = Array.Empty<ProductUpdate>();
+        downloadProgress.Visible = false;
         tabs.SelectedIndex = 0;
         queryButton.Enabled = true;
 
@@ -206,20 +219,21 @@ internal sealed class MainForm : Form
             ? "Example data loaded. These versions do not describe this computer."
             : $"Loaded {loaded.Products.Count} installed products. Online versions have not been checked.";
         note.Text = example
-            ? "Installed versions are example data. Checking does not download or install updates."
-            : "Checking versions does not download or install updates.";
+            ? "Installed versions are example data. Downloading a ZIP does not install updates."
+            : "Downloading a ZIP does not install updates.";
+        UpdateDownloadButton();
     }
 
     internal async Task QueryCloudAsync()
     {
-        if (installation is null || queryCancellation is not null)
+        if (installation is null || operationCancellation is not null)
         {
             return;
         }
 
         using var cancellation = new CancellationTokenSource();
-        queryCancellation = cancellation;
-        SetQueryBusy(true);
+        operationCancellation = cancellation;
+        SetBusy(true);
         cloudGrid.Rows.Clear();
         ResetComparisons();
         statusLabel.Text = "Loading cloud folder: " + installation.ClientFolder + "...";
@@ -228,6 +242,7 @@ internal sealed class MainForm : Form
         {
             IReadOnlyList<RemoteEntry> entries = await api.ListAsync(
                 installation.ClientFolder, usernameBox.Text, passwordBox.Text, cancellation.Token);
+            cancellation.Token.ThrowIfCancellationRequested();
             if (!IsDisposed)
             {
                 comparisons = UpdateComparison.Compare(installation, entries);
@@ -252,7 +267,7 @@ internal sealed class MainForm : Form
                     : "The cloud request timed out. Try again.";
             }
         }
-        catch (Exception error) when (error is HttpRequestException or IOException)
+        catch (Exception error) when (error is HttpRequestException or IOException or InvalidDataException)
         {
             if (!IsDisposed)
             {
@@ -263,10 +278,10 @@ internal sealed class MainForm : Form
         }
         finally
         {
-            queryCancellation = null;
+            operationCancellation = null;
             if (!IsDisposed)
             {
-                SetQueryBusy(false);
+                SetBusy(false);
             }
         }
     }
@@ -296,11 +311,108 @@ internal sealed class MainForm : Form
         }
     }
 
-    private void SetQueryBusy(bool busy)
+    private void SetBusy(bool busy)
     {
         openButton.Enabled = exampleButton.Enabled = usernameBox.Enabled = passwordBox.Enabled = !busy;
         queryButton.Enabled = !busy && installation is not null;
         cancelButton.Enabled = busy;
+        productsGrid.Enabled = !busy;
+        UpdateDownloadButton();
+    }
+
+    internal ProductUpdate? SelectedUpdate
+    {
+        get
+        {
+            if (tabs.SelectedIndex != 0 || productsGrid.SelectedRows.Count != 1)
+            {
+                return null;
+            }
+            string? product = productsGrid.SelectedRows[0].Cells[0].Value as string;
+            return comparisons.FirstOrDefault(result => result.Product.Name == product && result.Status == UpdateStatus.UpdateAvailable);
+        }
+    }
+
+    private void UpdateDownloadButton()
+    {
+        downloadButton.Enabled = operationCancellation is null && SelectedUpdate is not null;
+    }
+
+    private async Task ChooseDownloadAsync()
+    {
+        if (SelectedUpdate?.Package is not { } package)
+        {
+            return;
+        }
+        using var dialog = new SaveFileDialog
+        {
+            Title = "Save update ZIP", FileName = package.Name, DefaultExt = "zip",
+            Filter = "ZIP packages (*.zip)|*.zip", AddExtension = true, CheckPathExists = true, OverwritePrompt = false
+        };
+        if (dialog.ShowDialog(this) == DialogResult.OK)
+        {
+            await DownloadSelectedAsync(dialog.FileName);
+        }
+    }
+
+    internal async Task<string?> DownloadSelectedAsync(string destination)
+    {
+        ProductUpdate? selected = SelectedUpdate;
+        if (installation is null || operationCancellation is not null || selected is null)
+        {
+            return null;
+        }
+        using var cancellation = new CancellationTokenSource();
+        operationCancellation = cancellation;
+        SetBusy(true);
+        downloadProgress.Value = 0;
+        downloadProgress.Visible = true;
+        statusLabel.Text = "Downloading " + selected.Package!.Name + "...";
+        var progress = new Progress<DownloadProgress>(value =>
+        {
+            // Ignore queued reports after the operation finished or the window closed.
+            if (!IsDisposed && ReferenceEquals(operationCancellation, cancellation))
+            {
+                downloadProgress.Value = value.Percent;
+                statusLabel.Text = $"{value.Stage}: {value.Bytes:N0} / {value.Total:N0} bytes ({value.Percent}%).";
+            }
+        });
+        try
+        {
+            string path = await api.DownloadAsync(installation.ClientFolder, selected, destination,
+                usernameBox.Text, passwordBox.Text, progress, cancellation.Token);
+            if (!IsDisposed)
+            {
+                downloadProgress.Value = 100;
+                statusLabel.Text = "Package downloaded: " + path + ". Installation is still required.";
+            }
+            return path;
+        }
+        catch (OperationCanceledException)
+        {
+            if (!IsDisposed)
+            {
+                statusLabel.Text = cancellation.IsCancellationRequested ? "Download cancelled." : "Download timed out. Try again.";
+            }
+        }
+        catch (Exception error) when (error is IOException or InvalidDataException or HttpRequestException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            if (!IsDisposed)
+            {
+                statusLabel.Text = error is HttpRequestException { StatusCode: null }
+                    ? "Download interrupted. Check your connection and try again."
+                    : error.Message;
+            }
+        }
+        finally
+        {
+            operationCancellation = null;
+            if (!IsDisposed)
+            {
+                SetBusy(false);
+            }
+        }
+        return null;
     }
 
     protected override void OnFormClosing(FormClosingEventArgs e)
@@ -308,7 +420,7 @@ internal sealed class MainForm : Form
         base.OnFormClosing(e);
         if (!e.Cancel)
         {
-            queryCancellation?.Cancel();
+            operationCancellation?.Cancel();
         }
     }
 
@@ -316,7 +428,7 @@ internal sealed class MainForm : Form
     {
         if (disposing)
         {
-            queryCancellation?.Cancel();
+            operationCancellation?.Cancel();
             api.Dispose();
         }
         base.Dispose(disposing);
@@ -328,10 +440,10 @@ internal sealed class MainForm : Form
         passwordBox.Text = password;
     }
 
-    internal void CancelCloudQuery() => queryCancellation?.Cancel();
+    internal void CancelCloudQuery() => operationCancellation?.Cancel();
     internal int CloudEntryCount => cloudGrid.Rows.Count;
     internal string StatusText => statusLabel.Text;
-    internal bool QueryBusy => queryCancellation is not null;
+    internal bool QueryBusy => operationCancellation is not null;
     internal int ComparedProductCount => comparisons.Count;
     internal string DisplayedStatus(string product) => (string)productsGrid.Rows.Cast<DataGridViewRow>()
         .Single(row => (string)row.Cells[0].Value! == product).Cells[3].Value!;

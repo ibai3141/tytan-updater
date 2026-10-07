@@ -1,5 +1,7 @@
 # Local updater application
 
+Updated: October 7, 2026.
+
 ## Agreed workflow
 
 The local Windows application will identify the client from local information, query the corresponding folder on the existing cloud API, compare available package versions with locally installed versions, and allow downloading newer ZIPs. Installation of those ZIPs remains a separate responsibility to confirm with Tytan.
@@ -19,7 +21,7 @@ Implemented:
 - Show English errors and preserve the last valid data on a failed replacement.
 - Keep JSON mapping in InstallationFileReader so the final format can be substituted.
 
-Phase 1 originally made no API calls. Phase 2 now adds the cloud listing described below. Phase 3 now compares versions. Downloads and installation are not yet implemented. Available-version and status cells show Not checked. Loading the example does not detect actual installations on this computer and does not modify the local file.
+Phase 1 originally made no API calls. Phase 2 now adds the cloud listing described below. Phase 3 now compares versions. Phase 4 now downloads selected newer ZIPs. Installation is not implemented. Available-version and status cells show Not checked. Loading the example does not detect actual installations on this computer and does not modify the local file.
 
 ## Phase 2: HTTPS cloud-folder listing
 
@@ -56,7 +58,7 @@ The largest major/minor/patch tuple is selected independently for each product. 
 
 Rows with updates are highlighted. Missing packages show no available version. The summary counts updates without claiming that products with no package are up to date. Results are mapped by product name even if the user sorts the grid. Starting another query or loading another local file clears old comparisons; failed/cancelled refreshes cannot retain a previous update indication.
 
-The installed versions and source file are never changed by comparison. The selected RemoteEntry is kept with the result for the future download phase. No ZIP is downloaded or installed in this phase. The example-file warning remains visible after checking to distinguish illustrative installed versions from real installations.
+The installed versions and source file are never changed by comparison. The selected RemoteEntry is kept with the result and is now used by phase 4. Checking alone does not download or install a ZIP. The example-file warning remains visible after checking to distinguish illustrative installed versions from real installations.
 
 Source: desktop/Tytan.Updater.Desktop/UpdateComparison.cs. This excerpt assumes a valid matching package has been selected:
 
@@ -76,6 +78,38 @@ The real production listing, compared with the unchanged example installed versi
 | FK2026 | 005.005.039 | 005.005.040 | Update available |
 
 These installed values are still example data. Actual installation detection awaits the definitive local-file contract.
+
+## Phase 4: download a selected update
+
+1. Load your installation information (or the explicitly labeled example).
+2. Enter credentials and click Check for updates.
+3. In Installed products, select a row whose status is Update available.
+4. Click Download selected update and choose a ZIP filename in an existing directory.
+5. Wait for transfer and validation to complete. The status shows the saved path and reminds you that installation is still required.
+
+Download is disabled for an equal, newer-installed, or missing package and while another operation runs. It is available only from the installed-product tab. The shared Cancel button and closing the window cancel an active download. File/credential/product controls remain disabled until it finishes.
+
+The request uses HTTPS BasicAuth and download.php?file=<selected-relative-path>. Only a newer package in the loaded client's directory can be downloaded. Standard TLS validation and redirect rejection remain in force. A full HTTP 200 binary response is required; partial responses are rejected. Header retrieval uses the client's 30-second timeout, and the overall transfer plus validation has a 15-minute deadline.
+
+The client streams bytes to a unique sibling .part file. Listed size, Content-Length when supplied, and actual received bytes must agree. Size changes require checking for updates again. Existing destination files are never overwritten, including a file created by another process during transfer.
+
+After transfer, validation runs away from the UI thread. It opens the ZIP, requires at least one file, and reads its entries without extraction, checking their declared lengths. Expanded content is bounded at 2 GiB. This verifies ZIP structure/readability and completion; it is not a digital-signature, trusted checksum, or explicit CRC verification. Unsupported or unreadable archives cannot be published.
+
+Only after validation and a final cancellation check does File.Move publish the ZIP without overwrite. Failures and cancellations remove the owned partial file; filesystem cleanup failures are reported rather than claiming successful completion. A completed file is not rolled back if cancellation arrives after publication. Progress can show 100% transferred while ZIP validation is still running; rely on the final Package downloaded status for completion. Downloads are not resumed after interruption.
+
+Neither the installed versions nor their source file is updated. No executable or installer is run and no archive is extracted. Applying the ZIP and recording successful installation still need an agreed Tytan integration contract.
+
+## Download verification
+
+The self-test now includes 21 download checks in addition to 10 local, 12 comparison, and 22 cloud checks: 65 total. Download checks cover encoded endpoint/authentication, exact saved bytes, progress and validation, existing/concurrent destination preservation, cross-client and non-update rejection, HTTP errors/redirects/partial responses, header/body size mismatches, invalid ZIPs, interrupted streams, cancellation cleanup, UI completion and ZIP errors, and unchanged installed data.
+
+Optional real verification requires credentials privately supplied in TYTAN_API_USERNAME and TYTAN_API_PASSWORD:
+
+```powershell
+dotnet run --project desktop/Tytan.Updater.Desktop --configuration Release --no-build -- --verify-live-download
+```
+
+This queries Barcin_Wodbar using the example installation, downloads Faktury to a newly owned temporary test directory, validates it, checks that installed information is unchanged, and removes the directory afterward. It does not leave a package for installation. Use the normal window to save a package permanently. The real check passed on October 7, 2026, for Faktury_008.000.043.zip (17492922 bytes). No installation was performed.
 
 ## Provisional input contract
 
@@ -122,6 +156,8 @@ The compiled executable is desktop/Tytan.Updater.Desktop/bin/Release/net9.0-wind
 | DesktopChecks.cs | Local file parsing and window checks |
 | UpdateComparison.cs | Numeric versions, latest package selection, per-product results and statuses |
 | ComparisonChecks.cs | Pure version/selection checks without network access |
+| PackageDownload.cs | Streaming, progress, cancellation, size/ZIP validation, final publication |
+| DownloadChecks.cs | Simulated failure and UI tests plus optional real download check |
 | CloudChecks.cs | Simulated transport/window checks and optional real read-only verification |
 
 ## Verification
@@ -145,7 +181,6 @@ This briefly opens the window, queries the example client Barcin_Wodbar, verifie
 
 ## Next phases
 
-1. Download selected newer ZIPs to an explicit destination; verify completion, sizes, and ZIP readability. A download does not change the recorded installed version.
-2. Adapt the reader to the definitive local file and confirm how Tytan applies packages and maintains that file after successful installation.
+1. Adapt the reader to the definitive local file and confirm how Tytan applies packages and maintains that file after successful installation.
 
-Phases 1 to 3 deliver local installation data, a cloud listing, and version comparison. Downloading is the next separate phase.
+Phases 1 to 4 deliver local installation data, a cloud listing, version comparison, and validated ZIP downloading. The remaining integration requires the definitive local file and the installation contract.

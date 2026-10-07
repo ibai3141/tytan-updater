@@ -1,12 +1,12 @@
 # Scope and integration contract
 
-Updated: October 6, 2026.
+Updated: October 7, 2026.
 
 ## Confirmed deliverable
 
 This project delivers api.php, download.php, and common.php for the existing SQLupdate hosting directory. The original documents in F:\SQL_Update describe client-specific directories, versioned ZIP packages, HTTPS, and BasicAuth. The guide contains both a statement that endpoints are already prepared and instructions to place endpoint files. The user's subsequent clarification establishes that creating those endpoints is our responsibility.
 
-The initial C# library/CLI prototype was removed at the user's request. The latest clarification adds a local Windows application with a window: identify the client from local information, query that cloud folder, compare installed and remote versions, and allow downloading newer ZIPs. A new incremental desktop implementation lives under desktop/. Its first phase reads a provisional local JSON file and displays installed products; phase 2 queries that client's cloud folder using HTTPS and the shared account. Phase 3 compares the newest valid version of each installed product and shows explicit update/equal/newer-installed/missing outcomes. Downloading follows in the next phase. See desktop.md.
+The initial C# library/CLI prototype was removed at the user's request. The latest clarification adds a local Windows application with a window: identify the client from local information, query that cloud folder, compare installed and remote versions, and allow downloading newer ZIPs. A new incremental desktop implementation lives under desktop/. Its first phase reads a provisional local JSON file and displays installed products; phase 2 queries that client's cloud folder using HTTPS and the shared account. Phase 3 compares the newest valid version of each installed product and shows explicit update/equal/newer-installed/missing outcomes. Phase 4 downloads selected newer packages with progress, cancellation, size/readability checks, and preservation of existing files. Installation and the definitive local-file format remain to be agreed. See desktop.md.
 
 All clients will share the existing BasicAuth account, as expressly requested. The local client-folder name selects which directory the application requests; it does not restrict the account's server access. The PHP endpoints and hosting authentication remain unchanged. The final source of the client name (folder or installation file) and the definitive file format are pending.
 

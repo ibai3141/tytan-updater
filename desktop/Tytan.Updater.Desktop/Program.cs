@@ -16,12 +16,22 @@ internal static class Program
                 return local;
             }
             int comparisons = ComparisonChecks.Run();
-            return comparisons == 0 ? CloudChecks.Run() : comparisons;
+            if (comparisons != 0)
+            {
+                return comparisons;
+            }
+            int cloud = CloudChecks.Run();
+            return cloud == 0 ? DownloadChecks.Run() : cloud;
         }
 
         if (args.Length == 1 && args[0] == "--verify-live")
         {
             return CloudChecks.Run(live: true);
+        }
+
+        if (args.Length == 1 && args[0] == "--verify-live-download")
+        {
+            return DownloadChecks.Run(live: true);
         }
 
         if (args.Length > 1 || (args.Length == 1 && args[0].StartsWith("--")))

@@ -14,7 +14,7 @@ internal sealed record RemoteEntry(
     [property: JsonPropertyName("modified")] string Modified,
     [property: JsonPropertyName("path")] string Path);
 
-internal sealed class CloudApiClient : IDisposable
+internal sealed partial class CloudApiClient : IDisposable
 {
     internal const string DefaultBaseUrl = "https://tytan.poznan.pl/SQLupdate/";
     private readonly Uri baseUri;

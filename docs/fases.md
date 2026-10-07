@@ -1,6 +1,6 @@
 # Implementation phases and delivery status
 
-Updated: October 6, 2026. Commit messages are Spanish; documentation is English. The user handles pushing.
+Updated: October 7, 2026. Commit messages are Spanish; documentation is English. The user handles pushing.
 
 | Phase | Work | Status |
 | --- | --- | --- |
@@ -22,7 +22,7 @@ The latest agreed flow uses the same BasicAuth account for all clients and reads
 | Desktop 1 | Local WinForms window, provisional JSON reader, example, input errors | Completed locally; build and 10 checks passed |
 | Desktop 2 | HTTPS/BasicAuth query of the loaded client folder, cancellation and error handling | Completed; 17 simulated cloud checks and a real read-only production listing passed |
 | Desktop 3 | Per-product numeric version comparison and clear availability status | Completed; 44 total checks and real example/server comparison passed |
-| Desktop 4 | Select and download newer ZIPs with completion/integrity checks | Next |
+| Desktop 4 | Select and download newer ZIPs with size/readability checks | Completed; 65 total checks and a real Faktury download passed |
 | Desktop 5 | Adapt the final local file and confirm installation responsibilities with Tytan | Pending external contract |
 
 Each desktop phase is delivered for review before moving to the next. Commits remain Spanish and the user handles pushing.
