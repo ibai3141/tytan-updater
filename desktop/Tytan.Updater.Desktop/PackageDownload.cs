@@ -7,7 +7,9 @@ namespace Tytan.Updater.Desktop;
 
 internal sealed record DownloadProgress(long Bytes, long Total, string Stage)
 {
-    public int Percent => Total > 0 ? Math.Clamp((int)((double)Bytes / Total * 100), 0, 100) : 0;
+    // Reserve 100% for a validated ZIP published at the final destination.
+    public int Percent => Stage == "Downloaded" ? 100
+        : Total > 0 ? Math.Clamp((int)((double)Bytes / Total * 100), 0, 99) : 0;
 }
 
 internal sealed partial class CloudApiClient

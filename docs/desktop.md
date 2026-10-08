@@ -1,6 +1,6 @@
 # Local updater application
 
-Updated: October 7, 2026.
+Updated: October 8, 2026.
 
 ## Agreed workflow
 
@@ -85,7 +85,7 @@ These installed values are still example data. Actual installation detection awa
 2. Enter credentials and click Check for updates.
 3. In Installed products, select a row whose status is Update available.
 4. Click Download selected update and choose a ZIP filename in an existing directory.
-5. Wait for transfer and validation to complete. The status shows the saved path and reminds you that installation is still required.
+5. Wait for transfer and validation to complete. Only a validated ZIP saved at the final destination reaches 100%. The final Download complete status shows its path and explicitly states that automatic installation is unavailable. Click Open download folder to locate the saved ZIP.
 
 Download is disabled for an equal, newer-installed, or missing package and while another operation runs. It is available only from the installed-product tab. The shared Cancel button and closing the window cancel an active download. File/credential/product controls remain disabled until it finishes.
 
@@ -95,13 +95,13 @@ The client streams bytes to a unique sibling .part file. Listed size, Content-Le
 
 After transfer, validation runs away from the UI thread. It opens the ZIP, requires at least one file, and reads its entries without extraction, checking their declared lengths. Expanded content is bounded at 2 GiB. This verifies ZIP structure/readability and completion; it is not a digital-signature, trusted checksum, or explicit CRC verification. Unsupported or unreadable archives cannot be published.
 
-Only after validation and a final cancellation check does File.Move publish the ZIP without overwrite. Failures and cancellations remove the owned partial file; filesystem cleanup failures are reported rather than claiming successful completion. A completed file is not rolled back if cancellation arrives after publication. Progress can show 100% transferred while ZIP validation is still running; rely on the final Package downloaded status for completion. Downloads are not resumed after interruption.
+Only after validation and a final cancellation check does File.Move publish the ZIP without overwrite. Failures and cancellations remove the owned partial file; filesystem cleanup failures are reported rather than claiming successful completion. A completed file is not rolled back if cancellation arrives after publication. Progress stays below 100% during transfer and validation. While validating, the message says Transfer complete. Checking the ZIP before saving the final file. Only final publication reaches 100%; the Download complete status and Open download folder link identify the saved ZIP. A completed full bar remains visible as a completion indicator, not an installer activity indicator. Downloads are not resumed after interruption.
 
 Neither the installed versions nor their source file is updated. No executable or installer is run and no archive is extracted. Applying the ZIP and recording successful installation still need an agreed Tytan integration contract.
 
 ## Download verification
 
-The self-test now includes 21 download checks in addition to 10 local, 12 comparison, and 22 cloud checks: 65 total. Download checks cover encoded endpoint/authentication, exact saved bytes, progress and validation, existing/concurrent destination preservation, cross-client and non-update rejection, HTTP errors/redirects/partial responses, header/body size mismatches, invalid ZIPs, interrupted streams, cancellation cleanup, UI completion and ZIP errors, and unchanged installed data.
+The self-test now includes 23 download checks in addition to 10 local, 12 comparison, and 22 cloud checks: 67 total. Download checks cover encoded endpoint/authentication, exact saved bytes, progress and validation, existing/concurrent destination preservation, cross-client and non-update rejection, HTTP errors/redirects/partial responses, header/body size mismatches, invalid ZIPs, interrupted streams, cancellation cleanup, UI completion and ZIP errors, and unchanged installed data.
 
 Optional real verification requires credentials privately supplied in TYTAN_API_USERNAME and TYTAN_API_PASSWORD:
 

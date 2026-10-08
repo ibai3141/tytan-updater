@@ -84,6 +84,8 @@ internal static class DownloadChecks
             "Complete ZIP published byte-for-byte without leftover partials");
         Check(reports.Any(value => value.Stage == "Validating ZIP") && reports.Last().Stage == "Downloaded" && reports.Last().Percent == 100,
             "Progress includes validation and successful completion");
+        Check(reports.Where(value => value.Stage != "Downloaded").All(value => value.Percent < 100),
+            "Progress stays below 100 until validation and final publication finish");
         await ExpectFailure(() => api.DownloadAsync("Barcin_Wodbar", Update(bytes.Length), target, "test-user", "test-password", null, CancellationToken.None));
         Check(File.ReadAllBytes(target).SequenceEqual(bytes), "Existing destination remains unchanged");
         await ExpectFailure(() => api.DownloadAsync("other", Update(bytes.Length), Path.Combine(directory, "other.zip"), "test-user", "test-password", null, CancellationToken.None));
@@ -181,6 +183,8 @@ internal static class DownloadChecks
                 string target = Path.Combine(directory, "Faktury_008.000.043.zip");
                 string? result = await window.DownloadSelectedAsync(target);
                 Check(result == target && File.Exists(target) && !window.QueryBusy, "Window download completes and releases busy state");
+                Check(window.DownloadedPath == target && window.DownloadPercent == 100 && window.StatusText.Contains("Automatic installation is not available"),
+                    "Completed UI exposes the saved ZIP path and clarifies installation is unavailable");
                 using (var archive = ZipFile.OpenRead(target))
                 {
                     Check(archive.Entries.Count > 0, "Saved ZIP is readable");

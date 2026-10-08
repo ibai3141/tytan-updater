@@ -114,3 +114,12 @@ The retained Python harness tests the three actual PHP files independently of .N
 - Real verification queried the production API and downloaded Faktury_008.000.043.zip (17492922 listed bytes) through download.php using the desktop code. Size checks and ZIP readability passed. The installed example version stayed 008.000.042 and its file was unchanged. The owned temporary test directory was removed afterward.
 - Credentials were read privately from the original documents and supplied only to the verification child process. Screenshot contained only the application window with a masked password. No server files/settings or production packages were modified; no downloaded executable was run.
 - Remaining work depends on the other developer's definitive installation file and Tytan's installation contract. This phase delivers downloading, not automatic installation.
+
+## October 8, 2026: clarify download completion
+
+- The user reported a full progress bar and no installation. The exact message in their window was requested; the reported case has not been independently diagnosed from that message.
+- Code inspection confirmed that transferred bytes previously reached 100% before ZIP validation and final publication. Progress now stays at most 99% until the verified ZIP has been published. Validation has an explicit status message.
+- Successful download now displays Download complete, its saved ZIP path, and Automatic installation is not available. Open download folder opens the containing directory, never executes the package. The full bar remains visible after successful completion.
+- Release build passed with zero errors/warnings. All 67 checks passed, including new checks for progress before/after publication and the completed window's saved path and installation explanation.
+- A fresh real Faktury download through the desktop code passed size/readability checks and completed in the window. The application-only screenshot was inspected. The verification package was saved in its owned temporary test directory and removed afterward; normal user downloads remain at the selected destination.
+- Automatic installation remains unimplemented pending the installer contract. No installed-version file or server configuration was changed.

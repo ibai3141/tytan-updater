@@ -23,6 +23,11 @@ internal sealed class MainForm : Form
         Text = "Download selected update", AutoSize = true, Enabled = false, Margin = new Padding(0, 12, 0, 8)
     };
     private readonly ProgressBar downloadProgress = new() { Dock = DockStyle.Fill, Height = 14, Visible = false };
+    private readonly LinkLabel openDownloadFolder = new()
+    {
+        Text = "Open download folder", AutoSize = true, Visible = false, Margin = new Padding(18, 20, 0, 8)
+    };
+    private string? downloadedPath;
     private readonly TextBox usernameBox = new() { Width = 145, Text = Environment.GetEnvironmentVariable("TYTAN_API_USERNAME") ?? "TytanSQL" };
     private readonly TextBox passwordBox = new() { Width = 160, UseSystemPasswordChar = true, Text = Environment.GetEnvironmentVariable("TYTAN_API_PASSWORD") ?? "" };
     private readonly TabControl tabs = new() { Dock = DockStyle.Fill };
@@ -100,6 +105,7 @@ internal sealed class MainForm : Form
         queryButton.Click += async (_, _) => await QueryCloudAsync();
         cancelButton.Click += (_, _) => operationCancellation?.Cancel();
         downloadButton.Click += async (_, _) => await ChooseDownloadAsync();
+        openDownloadFolder.LinkClicked += (_, _) => OpenDownloadFolder();
         productsGrid.SelectionChanged += (_, _) => UpdateDownloadButton();
         tabs.SelectedIndexChanged += (_, _) => UpdateDownloadButton();
 
@@ -151,7 +157,10 @@ internal sealed class MainForm : Form
         layout.Controls.Add(buttons, 0, 3);
         layout.Controls.Add(connection, 0, 4);
         layout.Controls.Add(tabs, 0, 5);
-        layout.Controls.Add(downloadButton, 0, 6);
+        var downloadActions = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, Margin = new Padding(0) };
+        downloadActions.Controls.Add(downloadButton);
+        downloadActions.Controls.Add(openDownloadFolder);
+        layout.Controls.Add(downloadActions, 0, 6);
         layout.Controls.Add(downloadProgress, 0, 7);
         layout.Controls.Add(statusLabel, 0, 8);
         layout.Controls.Add(note, 0, 9);
@@ -207,6 +216,8 @@ internal sealed class MainForm : Form
         cloudGrid.Rows.Clear();
         comparisons = Array.Empty<ProductUpdate>();
         downloadProgress.Visible = false;
+        downloadedPath = null;
+        openDownloadFolder.Visible = false;
         tabs.SelectedIndex = 0;
         queryButton.Enabled = true;
 
@@ -367,6 +378,8 @@ internal sealed class MainForm : Form
         SetBusy(true);
         downloadProgress.Value = 0;
         downloadProgress.Visible = true;
+        downloadedPath = null;
+        openDownloadFolder.Visible = false;
         statusLabel.Text = "Downloading " + selected.Package!.Name + "...";
         var progress = new Progress<DownloadProgress>(value =>
         {
@@ -374,7 +387,9 @@ internal sealed class MainForm : Form
             if (!IsDisposed && ReferenceEquals(operationCancellation, cancellation))
             {
                 downloadProgress.Value = value.Percent;
-                statusLabel.Text = $"{value.Stage}: {value.Bytes:N0} / {value.Total:N0} bytes ({value.Percent}%).";
+                statusLabel.Text = value.Stage == "Validating ZIP"
+                    ? "Transfer complete. Checking the ZIP before saving the final file..."
+                    : $"{value.Stage}: {value.Bytes:N0} / {value.Total:N0} bytes ({value.Percent}%).";
             }
         });
         try
@@ -384,7 +399,9 @@ internal sealed class MainForm : Form
             if (!IsDisposed)
             {
                 downloadProgress.Value = 100;
-                statusLabel.Text = "Package downloaded: " + path + ". Installation is still required.";
+                downloadedPath = path;
+                openDownloadFolder.Visible = true;
+                statusLabel.Text = "Download complete. ZIP saved to: " + path + ". Automatic installation is not available.";
             }
             return path;
         }
@@ -413,6 +430,25 @@ internal sealed class MainForm : Form
             }
         }
         return null;
+    }
+
+    private void OpenDownloadFolder()
+    {
+        string? folder = downloadedPath is null ? null : Path.GetDirectoryName(downloadedPath);
+        if (folder is null || !Directory.Exists(folder))
+        {
+            MessageBox.Show(this, "The download folder is no longer available.", "Download folder");
+            return;
+        }
+        try
+        {
+            // Open the containing folder, never execute the downloaded package.
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(folder) { UseShellExecute = true });
+        }
+        catch (Exception error) when (error is System.ComponentModel.Win32Exception or InvalidOperationException)
+        {
+            MessageBox.Show(this, "Could not open the download folder: " + folder, "Download folder");
+        }
     }
 
     protected override void OnFormClosing(FormClosingEventArgs e)
@@ -444,6 +480,8 @@ internal sealed class MainForm : Form
     internal int CloudEntryCount => cloudGrid.Rows.Count;
     internal string StatusText => statusLabel.Text;
     internal bool QueryBusy => operationCancellation is not null;
+    internal string? DownloadedPath => downloadedPath;
+    internal int DownloadPercent => downloadProgress.Value;
     internal int ComparedProductCount => comparisons.Count;
     internal string DisplayedStatus(string product) => (string)productsGrid.Rows.Cast<DataGridViewRow>()
         .Single(row => (string)row.Cells[0].Value! == product).Cells[3].Value!;
