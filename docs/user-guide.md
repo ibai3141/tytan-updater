@@ -219,9 +219,3 @@ If the actual supplied installed version is already 008.000.043 and the server's
 | Connection failure or timeout | Check network access to the update server and retry |
 
 When reporting an issue, include the program used, customer/product/version names, time, exact error text, and whether Save As opened or a ZIP was saved. Do not include the password. A screenshot can help if it shows the status message without exposing credentials.
-
-## Reference and support
-
-The configured server is https://tytan.poznan.pl/SQLupdate/. The administrator owns hosting credentials, cloud folder/package contents, and correct installed-version information. The updater provides comparison and downloading; Tytan supplies the installation procedure.
-
-Technical details and source excerpts are in [Technical guide](technical-guide.md). Hosting setup is in [Server guide](server.md). Documentation is provided separately from the preserved original executable ZIP.
