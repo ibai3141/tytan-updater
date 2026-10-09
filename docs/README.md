@@ -21,7 +21,6 @@ A separate win-x86 package provides the same application workflow for 32-bit Win
 - [Desktop workflow and development phases](desktop.md)
 - [CLI syntax, credentials, and checks](cli.md)
 - [Windows publishing and distribution](distribution.md)
-- [Workspace cleanup and generated artifacts](maintenance.md)
 - [Short instructions included in the original delivery](distribution-readme.txt)
 - [Scope and responsibility contract](planteamiento.md)
 - [Implementation status](fases.md)
