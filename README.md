@@ -48,13 +48,10 @@ Deploy the three PHP files to SQLupdate. Keep the hosting's working authenticati
 - [Additional PHP technical walkthrough](docs/technical-walkthrough.md) — [Word](docs/technical-walkthrough.docx)
 - [Server deployment and configuration](docs/server.md)
 - [URL usage and acceptance checks](docs/uso.md)
-- [Scope and integration contract](docs/planteamiento.md)
-- [Implementation phases](docs/fases.md)
 - [Results and verification history](docs/verificacion.md)
 - [Local Windows application](docs/desktop.md)
 - [Command-line updater](docs/cli.md)
 - [Windows executables and customer distribution](docs/distribution.md)
-- [Installation integration contract and pending inputs](docs/installation-contract.md)
 
 ## Production URLs
 

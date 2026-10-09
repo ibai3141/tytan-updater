@@ -65,4 +65,4 @@ In the actual release directory, run:
 
 The self-tests use local fixtures, without production requests. Desktop checks briefly open actual windows. Also open the desktop executable normally and perform acceptance testing on a representative customer computer. Architecture-specific packages must be tested on matching hardware. Building a self-contained package on a development computer does not by itself prove compatibility with every customer environment.
 
-The current package checks and downloads ZIPs. Automatic Tytan installation remains outside the implemented behavior; see the [installation contract](installation-contract.md).
+The current package checks and downloads ZIPs. Automatic Tytan installation remains outside the implemented behavior.

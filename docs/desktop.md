@@ -185,6 +185,6 @@ This briefly opens the window, queries the example client Barcin_Wodbar, verifie
 
 1. Adapt the reader to the definitive local file and confirm how Tytan applies packages and maintains that file after successful installation.
 
-The required inputs and acceptance flow are recorded in [Installation integration contract](installation-contract.md). The original documents reviewed on October 7 do not provide the definitive file or installer entry point; phase 5 cannot be completed from those documents alone.
+The original documents reviewed on October 7 do not provide the definitive installation file or installer entry point. Automatic installation requires those details from Tytan.
 
 Phases 1 to 4 deliver local installation data, a cloud listing, version comparison, and validated ZIP downloading. The remaining integration requires the definitive local file and the installation contract.

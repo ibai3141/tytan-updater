@@ -22,10 +22,7 @@ A separate win-x86 package provides the same application workflow for 32-bit Win
 - [CLI syntax, credentials, and checks](cli.md)
 - [Windows publishing and distribution](distribution.md)
 - [Short instructions included in the original delivery](distribution-readme.txt)
-- [Scope and responsibility contract](planteamiento.md)
-- [Implementation status](fases.md)
 - [Verification history and observed production results](verificacion.md)
-- [Pending installation integration inputs](installation-contract.md)
 
 ## Regenerate Word copies
 

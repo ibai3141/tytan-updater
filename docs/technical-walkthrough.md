@@ -471,4 +471,4 @@ python -m pip install -r scripts/requirements-docs.txt
 python scripts/export_technical_doc.py
 ```
 
-For operational details use server.md and uso.md; verificacion.md retains the chronological evidence and fases.md records the delivery phases.
+For operational details use server.md and uso.md; verificacion.md retains the chronological evidence.

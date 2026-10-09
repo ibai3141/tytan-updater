@@ -477,6 +477,6 @@ The retained original ZIP is approximately 85.3 MiB, with SHA256 29A0E00943D989D
 
 To adapt a definitive installed-version file, replace the JSON mapping in InstallationFileReader while preserving LocalInstallation semantics. To change the production endpoint base, update/inject CloudApiClient's base URI and validate the HTTPS contract. Do not change server version selection: it belongs in the client comparison layer.
 
-Automatic installation requires the real Tytan entry point, required arguments/paths, runtime behavior, success/failure signal, and ownership of installed-version updates. DownloadAsync's verified path can feed that confirmed mechanism. A completed download, a launched executable, or a closed installer window alone must not be treated as installation success. See [installation contract](installation-contract.md).
+Automatic installation requires the real Tytan entry point, required arguments/paths, runtime behavior, success/failure signal, and ownership of installed-version updates. DownloadAsync's verified path can feed that confirmed mechanism. A completed download, a launched executable, or a closed installer window alone must not be treated as installation success.
 
 For end-user instructions, see [User guide](user-guide.md). For the PHP-specific walkthrough with additional endpoint excerpts, see [PHP technical walkthrough](technical-walkthrough.md). Deployment details remain in [Server guide](server.md).
