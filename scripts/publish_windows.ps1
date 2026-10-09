@@ -36,7 +36,7 @@ foreach ($app in $projects) {
 }
 
 Copy-Item -LiteralPath (Join-Path $repoRoot 'examples/installation.example.json') -Destination $releaseRoot
-Copy-Item -LiteralPath (Join-Path $repoRoot 'docs/distribution-readme.txt') -Destination (Join-Path $releaseRoot 'README.txt')
+Copy-Item -LiteralPath (Join-Path $repoRoot 'documentation/distribution-readme.txt') -Destination (Join-Path $releaseRoot 'README.txt')
 
 $zipPath = $releaseRoot + '.zip'
 Compress-Archive -Path (Join-Path $releaseRoot '*') -DestinationPath $zipPath -CompressionLevel Optimal

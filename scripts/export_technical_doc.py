@@ -125,7 +125,7 @@ def export(source, destination):
 if __name__ == '__main__':
     root = Path(__file__).resolve().parents[1]
     for name in ('technical-guide', 'user-guide', 'technical-walkthrough'):
-        source = root / 'docs' / (name + '.md')
+        source = root / 'documentation' / (name + '.md')
         destination = source.with_suffix('.docx')
         export(source, destination)
         print(f'Exported {destination.name}')

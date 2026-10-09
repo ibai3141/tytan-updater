@@ -23,7 +23,7 @@ tytan-updater/
     tests/server/test_endpoints.py
     scripts/export_technical_doc.py
     scripts/requirements-docs.txt
-    docs/
+    documentation/
 ```
 
 Copy only the three PHP files to the hosting SQLupdate directory alongside the existing client folders. common.php is included by both endpoints; direct HTTP access returns 404. The Apache example is a configuration reference and must be adapted to the hosting setup.

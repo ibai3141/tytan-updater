@@ -12,7 +12,7 @@ The desktop application opens a local installation JSON file and displays the cl
 dotnet run --project desktop/Tytan.Updater.Desktop --configuration Release
 ```
 
-See [Desktop workflow and run instructions](docs/desktop.md). All clients will use the shared hosting account, as requested; selecting a client folder is not an authorization boundary. The definitive installation-file format remains pending from the other developer.
+See [Desktop workflow and run instructions](documentation/desktop.md). All clients will use the shared hosting account, as requested; selecting a client folder is not an authorization boundary. The definitive installation-file format remains pending from the other developer.
 
 ## Command-line application
 
@@ -22,11 +22,11 @@ The Windows console executable accepts exactly two folder names: the cloud clien
 dotnet run --project cli/Tytan.Updater.Cli --configuration Release -- Barcin_Wodbar Faktury_008.000.042
 ```
 
-Set the server credentials in the process environment first. See [CLI setup, arguments, credentials, output, and checks](docs/cli.md).
+Set the server credentials in the process environment first. See [CLI setup, arguments, credentials, output, and checks](documentation/cli.md).
 
 ## Delivered files
 
-For customer computers, build a portable Windows ZIP with `./scripts/publish_windows.ps1`. It includes self-contained desktop and console executables, the desktop example file, and end-user instructions; customers do not need the source repository or a separate .NET installation. See [Windows distribution](docs/distribution.md).
+For customer computers, build a portable Windows ZIP with `./scripts/publish_windows.ps1`. It includes self-contained desktop and console executables, the desktop example file, and end-user instructions; customers do not need the source repository or a separate .NET installation. See [Windows distribution](documentation/distribution.md).
 
 For 32-bit Windows, publish with `-Runtime win-x86`; this bundles x86 executables and their 32-bit runtime. The default win-x64 package is for 64-bit Intel/AMD Windows. Both packages retain the same desktop and two-argument CLI workflow.
 
@@ -42,15 +42,15 @@ Deploy the three PHP files to SQLupdate. Keep the hosting's working authenticati
 
 ## Documentation
 
-- [Documentation index](docs/README.md)
-- [Complete technical guide with source excerpts](docs/technical-guide.md) — [Word](docs/technical-guide.docx)
-- [Desktop and console user guide](docs/user-guide.md) — [Word](docs/user-guide.docx)
-- [Additional PHP technical walkthrough](docs/technical-walkthrough.md) — [Word](docs/technical-walkthrough.docx)
-- [Server deployment and configuration](docs/server.md)
-- [URL usage and acceptance checks](docs/uso.md)
-- [Local Windows application](docs/desktop.md)
-- [Command-line updater](docs/cli.md)
-- [Windows executables and customer distribution](docs/distribution.md)
+- [Documentation index](documentation/README.md)
+- [Complete technical guide with source excerpts](documentation/technical-guide.md) — [Word](documentation/technical-guide.docx)
+- [Desktop and console user guide](documentation/user-guide.md) — [Word](documentation/user-guide.docx)
+- [Additional PHP technical walkthrough](documentation/technical-walkthrough.md) — [Word](documentation/technical-walkthrough.docx)
+- [Server deployment and configuration](documentation/server.md)
+- [URL usage and acceptance checks](documentation/uso.md)
+- [Local Windows application](documentation/desktop.md)
+- [Command-line updater](documentation/cli.md)
+- [Windows executables and customer distribution](documentation/distribution.md)
 
 ## Production URLs
 
@@ -60,7 +60,7 @@ https://tytan.poznan.pl/SQLupdate/api.php?dir=Barcin_Wodbar
 https://tytan.poznan.pl/SQLupdate/download.php?file=Barcin_Wodbar/Faktury_008.000.043.zip
 ```
 
-On October 6, 2026, the user supplied successful root and client JSON listings and confirmed that downloading also works. The hosting runtime is PHP 7.2.34. Local tests passed on PHP 7.2.34 and PHP 8.5.11. See the [technical guide](docs/technical-guide.md) for validation results and integration limits.
+On October 6, 2026, the user supplied successful root and client JSON listings and confirmed that downloading also works. The hosting runtime is PHP 7.2.34. Local tests passed on PHP 7.2.34 and PHP 8.5.11. See the [technical guide](documentation/technical-guide.md) for validation results and integration limits.
 
 ## Local tests
 
