@@ -144,3 +144,11 @@ The retained Python harness tests the three actual PHP files independently of .N
 - Added an optional third positional argument for the exact download directory. Explicit paths do not have a customer subfolder appended; the existing two-argument command retains its default downloads/<client-folder> destination.
 - All 24 CLI checks passed. New checks verify successful downloading to a newly created directory with spaces, empty-path rejection before HTTP, no directory creation when up to date, and preservation/error reporting when the destination is an existing file.
 - Documentation and help now show the third argument. These checks used local fixtures only; no production request or server change was needed.
+
+### Final destination interaction: Save As with two arguments
+
+- The user clarified that destination selection must happen in a window, with only two command-line parameters. This supersedes the third-argument destination described above.
+- The Windows console now opens Save As only after selecting a newer package, suggests that ZIP's filename, and downloads directly to the chosen full path. Cancelling the dialog returns 130 before any ZIP request. Equal/older server versions and authentication failures do not open the dialog. Existing files remain protected.
+- All 24 revised CLI checks passed using injected HTTP responses and a destination chooser, including dialog cancellation, cancellation after selection, the selected path with spaces, and rejection of a third argument.
+- An additional temporary local harness invoked the actual production SaveFileDialog method, observed its Save update ZIP window on the dedicated STA thread, closed that process's dialog, and verified that it returned cancellation. This verifies real dialog opening/cancellation; successful saved-path downloading is covered by the injected chooser checks.
+- The CLI now targets net9.0-windows with Windows Forms while retaining console output. No production request, server change, or installation was performed. Instructions and help use only two parameters.

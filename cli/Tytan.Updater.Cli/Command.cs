@@ -6,20 +6,21 @@ internal sealed record Credentials(string Username, string Password);
 
 internal static class Command
 {
-    internal const string Usage = "Usage: Tytan.Updater.Cli <client-folder> <installed-folder-name> [download-folder]";
+    internal const string Usage = "Usage: Tytan.Updater.Cli <client-folder> <installed-folder-name>";
 
     internal static async Task<int> RunAsync(string[] args, CloudApiClient api, TextWriter output,
-        TextWriter error, Func<Credentials> credentials, CancellationToken token, string? downloadRoot = null)
+        TextWriter error, Func<Credentials> credentials, CancellationToken token,
+        Func<string, CancellationToken, Task<string?>>? chooseDestination = null)
     {
         if (args.Length == 1 && args[0] is "--help" or "-h")
         {
             await output.WriteLineAsync(Usage);
-            await output.WriteLineAsync("Example: Tytan.Updater.Cli Barcin_Wodbar Faktury_008.000.042 \"C:\\Tytan Downloads\"");
-            await output.WriteLineAsync("The optional third argument selects the exact download folder. Default: downloads/<client-folder> under the current directory. No local configuration file is read.");
+            await output.WriteLineAsync("Example: Tytan.Updater.Cli Barcin_Wodbar Faktury_008.000.042");
+            await output.WriteLineAsync("If an update is available, a Save As window lets you choose the ZIP destination. No local configuration file is read.");
             return 0;
         }
 
-        if (args.Length is not (2 or 3))
+        if (args.Length != 2)
         {
             await error.WriteLineAsync(Usage);
             return 2;
@@ -53,15 +54,6 @@ internal static class Command
                 throw new InvalidDataException("Set TYTAN_API_PASSWORD before running the command.");
             }
 
-            if (args.Length == 3 && string.IsNullOrWhiteSpace(args[2]))
-            {
-                throw new InvalidDataException("The download folder must not be empty.");
-            }
-
-            // Use an explicit destination directly, without appending the customer folder.
-            string destination = args.Length == 3 ? Path.GetFullPath(args[2])
-                : Path.Combine(downloadRoot ?? Path.Combine(Environment.CurrentDirectory, "downloads"),
-                    installation.ClientFolder);
             await output.WriteLineAsync("Checking cloud folder: " + installation.ClientFolder);
             IReadOnlyList<RemoteEntry> entries = await api.ListAsync(installation.ClientFolder,
                 account.Username, account.Password, token);
@@ -87,13 +79,20 @@ internal static class Command
                 return 0;
             }
 
-            Directory.CreateDirectory(destination);
             foreach (ProductUpdate update in updates)
             {
                 token.ThrowIfCancellationRequested();
+                await output.WriteLineAsync("Choose where to save " + update.Package!.Name + ".");
+                string? destination = await (chooseDestination ?? DownloadLocation.ChooseAsync)(update.Package.Name, token);
+                token.ThrowIfCancellationRequested();
+                if (destination is null)
+                {
+                    await output.WriteLineAsync("Download cancelled. No package was downloaded.");
+                    return 130;
+                }
                 await output.WriteLineAsync("Downloading " + update.Package!.Name + "...");
                 string path = await api.DownloadAsync(installation.ClientFolder, update,
-                    Path.Combine(destination, update.Package.Name), account.Username, account.Password,
+                    destination, account.Username, account.Password,
                     new TerminalProgress(output), token);
                 await output.WriteLineAsync("ZIP saved to: " + path);
             }
@@ -112,7 +111,8 @@ internal static class Command
             return token.IsCancellationRequested ? 130 : 1;
         }
         catch (Exception exception) when (exception is InvalidDataException or IOException or
-            UnauthorizedAccessException or HttpRequestException or ArgumentException or NotSupportedException)
+            UnauthorizedAccessException or HttpRequestException or ArgumentException or NotSupportedException or
+            System.ComponentModel.Win32Exception)
         {
             await error.WriteLineAsync("Error: " + exception.Message);
             return 1;

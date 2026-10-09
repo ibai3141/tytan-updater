@@ -25,12 +25,15 @@ internal static class CommandChecks
             }
             byte[] bytes = package.ToArray();
 
-            async Task<(int Code, string Out, string Error, int Requests)> Run(string[] args,
+            async Task<(int Code, string Out, string Error, int Requests, int Dialogs)> Run(string[] args,
                 string version = "008.000.043", bool empty = false, bool unauthorized = false,
                 bool invalidZip = false, string password = "test-password", CancellationToken token = default,
-                string? outputRoot = null, string product = "Faktury")
+                string? outputRoot = null, string product = "Faktury", bool cancelDialog = false,
+                bool cancelAfterChoice = false)
             {
                 int requests = 0;
+                int dialogs = 0;
+                using var choiceCancellation = CancellationTokenSource.CreateLinkedTokenSource(token);
                 var entry = new RemoteEntry(product + "_" + version + ".zip", "file", bytes.Length,
                     "2026-10-09 10:00:00", "TestClient/" + product + "_" + version + ".zip");
                 using var http = new HttpClient(new Handler(request =>
@@ -61,8 +64,17 @@ internal static class CommandChecks
                 using var output = new StringWriter();
                 using var error = new StringWriter();
                 int code = await Command.RunAsync(args, api, output, error,
-                    () => new Credentials("test-user", password), token, outputRoot ?? Path.Combine(root, "downloads"));
-                return (code, output.ToString(), error.ToString(), requests);
+                    () => new Credentials("test-user", password), choiceCancellation.Token, (filename, _) =>
+                    {
+                        dialogs++;
+                        if (filename != entry.Name) throw new InvalidDataException("Unexpected suggested ZIP filename.");
+                        if (cancelAfterChoice) choiceCancellation.Cancel();
+                        if (cancelDialog) return Task.FromResult<string?>(null);
+                        string folder = outputRoot ?? Path.Combine(root, "downloads", "TestClient");
+                        Directory.CreateDirectory(folder);
+                        return Task.FromResult<string?>(Path.Combine(folder, filename));
+                    });
+                return (code, output.ToString(), error.ToString(), requests, dialogs);
             }
 
             void Check(bool condition, string name)
@@ -75,15 +87,15 @@ internal static class CommandChecks
             string[] standard = ["TestClient", "Faktury_008.000.042"];
             var result = await Run(standard, version: "008.000.042");
             Check(result.Code == 0 && result.Out.Contains("No updates available.") && result.Requests == 1 &&
-                !Directory.Exists(Path.Combine(root, "downloads")), "equal version does not download");
+                result.Dialogs == 0 && !Directory.Exists(Path.Combine(root, "downloads")), "equal version does not open a dialog or download");
 
             result = await Run(standard, version: "008.000.041");
-            Check(result.Code == 0 && result.Out.Contains("Installed version is newer") && result.Requests == 1,
+            Check(result.Code == 0 && result.Out.Contains("Installed version is newer") && result.Requests == 1 && result.Dialogs == 0,
                 "older server package does not downgrade");
 
             result = await Run(standard);
             string target = Path.Combine(root, "downloads", "TestClient", "Faktury_008.000.043.zip");
-            Check(result.Code == 0 && result.Requests == 2 && File.ReadAllBytes(target).SequenceEqual(bytes) &&
+            Check(result.Code == 0 && result.Requests == 2 && result.Dialogs == 1 && File.ReadAllBytes(target).SequenceEqual(bytes) &&
                 result.Out.Contains("Downloaded 1 update(s).") &&
                 !Directory.EnumerateFiles(root, "*.json", SearchOption.AllDirectories).Any(),
                 "two folder names download a newer ZIP without any local JSON or installation folder");
@@ -93,24 +105,23 @@ internal static class CommandChecks
                 "existing ZIP is preserved");
 
             string chosenFolder = Path.Combine(root, "my downloads", "new folder");
-            result = await Run([standard[0], standard[1], chosenFolder]);
+            result = await Run(standard, outputRoot: chosenFolder);
             string chosenTarget = Path.Combine(chosenFolder, "Faktury_008.000.043.zip");
             Check(result.Code == 0 && File.ReadAllBytes(chosenTarget).SequenceEqual(bytes) &&
                 result.Out.Contains(chosenTarget) && !Directory.Exists(Path.Combine(chosenFolder, "TestClient")),
-                "third argument creates the exact download directory including spaces");
+                "chosen dialog destination is used directly including spaces");
 
-            result = await Run([standard[0], standard[1], " "]);
-            Check(result.Code == 1 && result.Requests == 0 && result.Error.Contains("must not be empty"),
-                "empty download path is rejected before HTTP");
+            result = await Run(standard, cancelDialog: true);
+            Check(result.Code == 130 && result.Requests == 1 && result.Dialogs == 1 && result.Out.Contains("Download cancelled"),
+                "cancelling Save As does not request the ZIP");
 
-            string unusedFolder = Path.Combine(root, "no-update-destination");
-            result = await Run([standard[0], standard[1], unusedFolder], version: "008.000.042");
-            Check(result.Code == 0 && !Directory.Exists(unusedFolder),
-                "custom destination is not created when no update is available");
+            result = await Run(standard, cancelAfterChoice: true);
+            Check(result.Code == 130 && result.Requests == 1 && result.Dialogs == 1,
+                "cancellation after choosing a destination prevents the ZIP request");
 
-            result = await Run([standard[0], standard[1], chosenTarget]);
-            Check(result.Code == 1 && File.ReadAllBytes(chosenTarget).SequenceEqual(bytes),
-                "file supplied as destination folder is preserved and reported as an error");
+            result = await Run([standard[0], standard[1], chosenFolder]);
+            Check(result.Code == 2 && result.Requests == 0 && result.Dialogs == 0,
+                "third positional argument is rejected");
 
             result = await Run(["../TestClient", standard[1]]);
             Check(result.Code == 1 && result.Requests == 0, "invalid client folder is rejected before HTTP");
@@ -129,11 +140,11 @@ internal static class CommandChecks
                 "product names containing underscores are parsed at the last underscore");
 
             result = await Run(standard, empty: true);
-            Check(result.Code == 1 && result.Error.Contains("No matching package") && !result.Out.Contains("No updates available."),
+            Check(result.Code == 1 && result.Dialogs == 0 && result.Error.Contains("No matching package") && !result.Out.Contains("No updates available."),
                 "missing package is not reported as up to date");
 
             result = await Run(standard, unauthorized: true);
-            Check(result.Code == 1 && result.Error.Contains("401"), "authentication failure returns an error");
+            Check(result.Code == 1 && result.Dialogs == 0 && result.Error.Contains("401"), "authentication failure returns an error without a dialog");
 
             result = await Run(standard, password: "");
             Check(result.Code == 1 && result.Requests == 0 && result.Error.Contains("TYTAN_API_PASSWORD"),
@@ -153,7 +164,7 @@ internal static class CommandChecks
             Check(result.Code == 2 && result.Error.Contains("Usage:"), "invalid arguments return usage and code 2");
 
             result = await Run(["TestClient", standard[1], "--output", root]);
-            Check(result.Code == 2 && result.Requests == 0, "more than three positional arguments are rejected");
+            Check(result.Code == 2 && result.Requests == 0, "extra positional arguments are rejected");
 
             result = await Run(["--help"]);
             Check(result.Code == 0 && result.Out.Contains("Faktury_008.000.042") && result.Requests == 0,
