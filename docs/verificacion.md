@@ -138,3 +138,9 @@ The retained Python harness tests the three actual PHP files independently of .N
 - The CLI now accepts exactly two positional names, for example `Barcin_Wodbar Faktury_008.000.042`. It derives the product and version from the last underscore; it reads no local JSON and requires no existing installed directory. ZIPs are saved in `downloads/<client-folder>` under the current working directory.
 - All 20 revised CLI checks passed, including operation without a JSON file or installed directory, invalid version/name/path rejection before HTTP, product names containing underscores, and rejection of extra arguments. Existing comparison, authentication, cancellation, and validated-download checks remain covered.
 - No production request or server change was needed for this correction. The desktop application's separate JSON workflow is unchanged.
+
+### User-selected CLI destination
+
+- Added an optional third positional argument for the exact download directory. Explicit paths do not have a customer subfolder appended; the existing two-argument command retains its default downloads/<client-folder> destination.
+- All 24 CLI checks passed. New checks verify successful downloading to a newly created directory with spaces, empty-path rejection before HTTP, no directory creation when up to date, and preservation/error reporting when the destination is an existing file.
+- Documentation and help now show the third argument. These checks used local fixtures only; no production request or server change was needed.

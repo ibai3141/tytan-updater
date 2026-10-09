@@ -2,21 +2,22 @@
 
 Updated: October 9, 2026.
 
-The console accepts exactly two positional names: the cloud customer folder and the installed product folder. It extracts the product and version from the second name, compares with the server, and downloads the newest ZIP only if its version is higher. It opens no window, reads no local configuration file, and does not install packages.
+The console accepts two required names (the cloud customer folder and the installed product folder) and an optional third argument selecting the download directory. It extracts the product and version from the second name, compares with the server, and downloads the newest ZIP only if its version is higher. It opens no window, reads no local configuration file, and does not install packages.
 
 ## Arguments
 
 ```text
-Tytan.Updater.Cli <client-folder> <installed-folder-name>
-Tytan.Updater.Cli Barcin_Wodbar Faktury_008.000.042
+Tytan.Updater.Cli <client-folder> <installed-folder-name> [download-folder]
+Tytan.Updater.Cli Barcin_Wodbar Faktury_008.000.042 "C:\Tytan Downloads"
 ```
 
 - First argument: cloud customer folder, for example Barcin_Wodbar.
 - Second argument: installed product folder name, for example Faktury_008.000.042.
+- Optional third argument: exact destination directory. Quote paths containing spaces. Relative paths resolve from the terminal's current working directory. The directory is created when a newer package needs downloading.
 
 The second argument is a name, not a path. Its format is product_NNN.NNN.NNN without a .zip extension. The last underscore separates the version, so product names can contain underscores. No JSON file or existing local folder is required. The supplied name is the source of the installed version; the CLI does not independently detect it.
 
-ZIPs are saved under downloads/<client-folder> relative to the terminal's current working directory, for example downloads/Barcin_Wodbar/Faktury_008.000.043.zip. Existing ZIPs are preserved; an existing destination produces an error rather than being overwritten or considered installed.
+With a third argument, the ZIP is saved directly in that directory; no customer subfolder is appended. Without it, ZIPs are saved under downloads/<client-folder> relative to the terminal's current working directory, for example downloads/Barcin_Wodbar/Faktury_008.000.043.zip. Existing ZIPs are preserved; an existing destination produces an error rather than being overwritten or considered installed.
 
 ## Run from PowerShell
 
@@ -28,10 +29,10 @@ $secret = Read-Host 'Server password' -AsSecureString
 $env:TYTAN_API_PASSWORD = [System.Net.NetworkCredential]::new('', $secret).Password
 ```
 
-Then run with just the two folder names:
+Then run with the two folder names and your chosen destination:
 
 ```powershell
-dotnet run --project cli/Tytan.Updater.Cli --configuration Release -- Barcin_Wodbar Faktury_008.000.042
+dotnet run --project cli/Tytan.Updater.Cli --configuration Release -- Barcin_Wodbar Faktury_008.000.042 "C:\Users\Ibai\Downloads\Tytan"
 ```
 
 After testing, remove the password from the current environment:
@@ -60,7 +61,7 @@ Incomplete downloads are removed. Completed ZIPs are not extracted or installed.
 
 ```powershell
 dotnet publish cli/Tytan.Updater.Cli --configuration Release --runtime win-x64 --self-contained true --output downloads/cli-publish
-& ./downloads/cli-publish/Tytan.Updater.Cli.exe Barcin_Wodbar Faktury_008.000.042
+& ./downloads/cli-publish/Tytan.Updater.Cli.exe Barcin_Wodbar Faktury_008.000.042 "C:\Users\Ibai\Downloads\Tytan"
 ```
 
 Distribute the whole published directory. This console executable is separate from the WinForms program. Publishing with --self-contained true includes its .NET runtime.
@@ -70,4 +71,4 @@ dotnet run --project cli/Tytan.Updater.Cli --configuration Release -- --help
 dotnet run --project cli/Tytan.Updater.Cli --configuration Release -- --self-test
 ```
 
-All 20 CLI checks use temporary local fixtures and an injected HTTP handler, never production. They cover equal/older/newer versions, authenticated listing/download, operation without local JSON or installed directories, existing ZIP preservation, invalid folder names and paths, underscores in product names, missing packages, authentication errors, missing password, invalid ZIP cleanup, cancellation, exactly two arguments, and help. The desktop application's JSON-based workflow is separate and unchanged.
+All 24 CLI checks use temporary local fixtures and an injected HTTP handler, never production. They cover equal/older/newer versions, authenticated listing/download, operation without local JSON or installed directories, existing ZIP preservation, invalid folder names and paths, underscores in product names, missing packages, authentication errors, missing password, invalid ZIP cleanup, cancellation, argument counts, and help. Destination checks cover directory creation with spaces, saving directly in the chosen directory, empty paths, a file supplied as a directory, and no directory creation when up to date. The desktop application's JSON-based workflow is separate and unchanged.

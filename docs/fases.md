@@ -29,6 +29,6 @@ Each desktop phase is delivered for review before moving to the next. Commits re
 
 ## Additional console delivery
 
-On October 9, a separate console executable was added at `cli/Tytan.Updater.Cli`. Following the user's clarification, it accepts exactly two names: the cloud client folder and the installed product folder (for example, `Faktury_008.000.042`). It extracts the product/version from that name, downloads a newer ZIP, or reports no updates. It shares the desktop comparison/download implementation and does not install packages. Twenty CLI checks passed.
+On October 9, a separate console executable was added at `cli/Tytan.Updater.Cli`. Following the user's clarification, it accepts two required names: the cloud client folder and the installed product folder (for example, `Faktury_008.000.042`). At the user's subsequent request, an optional third argument selects the exact download directory. It extracts the product/version from the installed folder name, downloads a newer ZIP, or reports no updates. It shares the desktop comparison/download implementation and does not install packages. Twenty-four CLI checks passed.
 
 The CLI does not read an installation JSON or require a real local directory. The desktop JSON workflow remains separate. See [CLI instructions](cli.md) for credentials, arguments, output paths, exit codes, and distribution.

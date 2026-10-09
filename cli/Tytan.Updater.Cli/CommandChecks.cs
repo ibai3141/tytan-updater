@@ -92,6 +92,26 @@ internal static class CommandChecks
             Check(result.Code == 1 && result.Error.Contains("already exists") && File.ReadAllBytes(target).SequenceEqual(bytes),
                 "existing ZIP is preserved");
 
+            string chosenFolder = Path.Combine(root, "my downloads", "new folder");
+            result = await Run([standard[0], standard[1], chosenFolder]);
+            string chosenTarget = Path.Combine(chosenFolder, "Faktury_008.000.043.zip");
+            Check(result.Code == 0 && File.ReadAllBytes(chosenTarget).SequenceEqual(bytes) &&
+                result.Out.Contains(chosenTarget) && !Directory.Exists(Path.Combine(chosenFolder, "TestClient")),
+                "third argument creates the exact download directory including spaces");
+
+            result = await Run([standard[0], standard[1], " "]);
+            Check(result.Code == 1 && result.Requests == 0 && result.Error.Contains("must not be empty"),
+                "empty download path is rejected before HTTP");
+
+            string unusedFolder = Path.Combine(root, "no-update-destination");
+            result = await Run([standard[0], standard[1], unusedFolder], version: "008.000.042");
+            Check(result.Code == 0 && !Directory.Exists(unusedFolder),
+                "custom destination is not created when no update is available");
+
+            result = await Run([standard[0], standard[1], chosenTarget]);
+            Check(result.Code == 1 && File.ReadAllBytes(chosenTarget).SequenceEqual(bytes),
+                "file supplied as destination folder is preserved and reported as an error");
+
             result = await Run(["../TestClient", standard[1]]);
             Check(result.Code == 1 && result.Requests == 0, "invalid client folder is rejected before HTTP");
 
@@ -133,7 +153,7 @@ internal static class CommandChecks
             Check(result.Code == 2 && result.Error.Contains("Usage:"), "invalid arguments return usage and code 2");
 
             result = await Run(["TestClient", standard[1], "--output", root]);
-            Check(result.Code == 2 && result.Requests == 0, "only two positional arguments are accepted");
+            Check(result.Code == 2 && result.Requests == 0, "more than three positional arguments are rejected");
 
             result = await Run(["--help"]);
             Check(result.Code == 0 && result.Out.Contains("Faktury_008.000.042") && result.Requests == 0,

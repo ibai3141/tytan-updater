@@ -6,7 +6,7 @@ internal sealed record Credentials(string Username, string Password);
 
 internal static class Command
 {
-    internal const string Usage = "Usage: Tytan.Updater.Cli <client-folder> <installed-folder-name>";
+    internal const string Usage = "Usage: Tytan.Updater.Cli <client-folder> <installed-folder-name> [download-folder]";
 
     internal static async Task<int> RunAsync(string[] args, CloudApiClient api, TextWriter output,
         TextWriter error, Func<Credentials> credentials, CancellationToken token, string? downloadRoot = null)
@@ -14,12 +14,12 @@ internal static class Command
         if (args.Length == 1 && args[0] is "--help" or "-h")
         {
             await output.WriteLineAsync(Usage);
-            await output.WriteLineAsync("Example: Tytan.Updater.Cli Barcin_Wodbar Faktury_008.000.042");
-            await output.WriteLineAsync("The installed folder name supplies the product and version. No local file is read. Newer ZIPs are saved in downloads/<client-folder> under the current directory.");
+            await output.WriteLineAsync("Example: Tytan.Updater.Cli Barcin_Wodbar Faktury_008.000.042 \"C:\\Tytan Downloads\"");
+            await output.WriteLineAsync("The optional third argument selects the exact download folder. Default: downloads/<client-folder> under the current directory. No local configuration file is read.");
             return 0;
         }
 
-        if (args.Length != 2)
+        if (args.Length is not (2 or 3))
         {
             await error.WriteLineAsync(Usage);
             return 2;
@@ -53,8 +53,15 @@ internal static class Command
                 throw new InvalidDataException("Set TYTAN_API_PASSWORD before running the command.");
             }
 
-            string destination = Path.Combine(downloadRoot ?? Path.Combine(Environment.CurrentDirectory, "downloads"),
-                installation.ClientFolder);
+            if (args.Length == 3 && string.IsNullOrWhiteSpace(args[2]))
+            {
+                throw new InvalidDataException("The download folder must not be empty.");
+            }
+
+            // Use an explicit destination directly, without appending the customer folder.
+            string destination = args.Length == 3 ? Path.GetFullPath(args[2])
+                : Path.Combine(downloadRoot ?? Path.Combine(Environment.CurrentDirectory, "downloads"),
+                    installation.ClientFolder);
             await output.WriteLineAsync("Checking cloud folder: " + installation.ClientFolder);
             IReadOnlyList<RemoteEntry> entries = await api.ListAsync(installation.ClientFolder,
                 account.Username, account.Password, token);
