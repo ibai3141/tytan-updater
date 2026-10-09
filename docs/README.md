@@ -18,11 +18,10 @@ A separate win-x86 package provides the same application workflow for 32-bit Win
 
 - [Hosting deployment and configuration](server.md)
 - [Endpoint URL examples](uso.md)
-- [Desktop workflow and development phases](desktop.md)
+- [Desktop workflow and run instructions](desktop.md)
 - [CLI syntax, credentials, and checks](cli.md)
 - [Windows publishing and distribution](distribution.md)
 - [Short instructions included in the original delivery](distribution-readme.txt)
-- [Verification history and observed production results](verificacion.md)
 
 ## Regenerate Word copies
 

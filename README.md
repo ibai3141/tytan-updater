@@ -1,10 +1,10 @@
 # tytan-updater
 
-PHP endpoints for distributing TytanSQL update ZIPs over HTTPS with BasicAuth. The delivered server lists available client folders and packages and streams a selected ZIP. Tytan's application selects versions and installs updates.
+TytanSQL update distribution over HTTPS with BasicAuth: PHP endpoints list client folders and serve ZIP packages, while Windows desktop and command-line applications compare installed versions and download newer packages. Installation is handled separately by Tytan.
 
-The repository delivers the PHP server and now starts a local Windows updater, following the clarified request to read client information and installed versions from the customer's computer. The earlier C# library/CLI prototype was removed; the new desktop application is developed incrementally under desktop/.
+The repository contains the PHP server, both Windows applications, an example installation file, automated checks, publishing tools, and technical and user documentation in English.
 
-## Local Windows application: phases 1 to 4
+## Desktop application
 
 The desktop application opens a local installation JSON file and displays the client folder, products, and installed versions. Click Load example to try the provisional format, enter the shared account credentials, then click Check for updates. It queries that client's API directory and compares the newest valid ZIP version for each installed product. Installed products shows Update available, Up to date, Installed version is newer, or No package. The Cloud folder tab retains the full metadata listing. Select an Update available row and click Download selected update to save its ZIP. Downloads show progress, support cancellation, preserve existing files, and validate size and ZIP readability before completion. Installation is not performed.
 
@@ -12,7 +12,7 @@ The desktop application opens a local installation JSON file and displays the cl
 dotnet run --project desktop/Tytan.Updater.Desktop --configuration Release
 ```
 
-See [Desktop workflow, run instructions, and next phases](docs/desktop.md). All clients will use the shared hosting account, as requested; selecting a client folder is not an authorization boundary. The definitive installation-file format remains pending from the other developer.
+See [Desktop workflow and run instructions](docs/desktop.md). All clients will use the shared hosting account, as requested; selecting a client folder is not an authorization boundary. The definitive installation-file format remains pending from the other developer.
 
 ## Command-line application
 
@@ -42,13 +42,12 @@ Deploy the three PHP files to SQLupdate. Keep the hosting's working authenticati
 
 ## Documentation
 
-- [Documentation index and retained release scope](docs/README.md)
+- [Documentation index](docs/README.md)
 - [Complete technical guide with source excerpts](docs/technical-guide.md) — [Word](docs/technical-guide.docx)
 - [Desktop and console user guide](docs/user-guide.md) — [Word](docs/user-guide.docx)
 - [Additional PHP technical walkthrough](docs/technical-walkthrough.md) — [Word](docs/technical-walkthrough.docx)
 - [Server deployment and configuration](docs/server.md)
 - [URL usage and acceptance checks](docs/uso.md)
-- [Results and verification history](docs/verificacion.md)
 - [Local Windows application](docs/desktop.md)
 - [Command-line updater](docs/cli.md)
 - [Windows executables and customer distribution](docs/distribution.md)
@@ -61,7 +60,7 @@ https://tytan.poznan.pl/SQLupdate/api.php?dir=Barcin_Wodbar
 https://tytan.poznan.pl/SQLupdate/download.php?file=Barcin_Wodbar/Faktury_008.000.043.zip
 ```
 
-On October 6, 2026, the user supplied successful root and client JSON listings and confirmed that downloading also works. The hosting runtime is PHP 7.2.34. Local tests passed on PHP 7.2.34 and PHP 8.5.11. See the verification record for exact evidence and remaining acceptance work.
+On October 6, 2026, the user supplied successful root and client JSON listings and confirmed that downloading also works. The hosting runtime is PHP 7.2.34. Local tests passed on PHP 7.2.34 and PHP 8.5.11. See the [technical guide](docs/technical-guide.md) for validation results and integration limits.
 
 ## Local tests
 

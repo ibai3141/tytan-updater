@@ -145,4 +145,4 @@ For future deployments:
 4. Check root and client listings and download a known ZIP.
 5. Compare bytes and archive integrity and connect the endpoints to Tytan's application.
 
-No C# source or .NET runtime is required for these PHP endpoints. See uso.md for the exact production URLs and verificacion.md for results.
+No C# source or .NET runtime is required for these PHP endpoints. See [URL examples](uso.md) for the production URLs and the [technical guide](technical-guide.md) for validation results.

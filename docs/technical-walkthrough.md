@@ -471,4 +471,4 @@ python -m pip install -r scripts/requirements-docs.txt
 python scripts/export_technical_doc.py
 ```
 
-For operational details use server.md and uso.md; verificacion.md retains the chronological evidence.
+For operational details use [server deployment](server.md) and [URL examples](uso.md). See the [technical guide](technical-guide.md) for validation results.

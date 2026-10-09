@@ -444,7 +444,7 @@ python tests/server/test_endpoints.py --php C:/path/to/php.exe
 | CommandChecks | 24 | Two-name input, authenticated query/download, selected path, chooser cancellation, errors, help |
 | Total Windows checks | 91 | Local simulated responses/fixtures; no production requests |
 
-The PHP harness independently launches actual temporary PHP servers, creates owned ZIP fixtures, exercises endpoints/configuration failures, and cleans up. See [verification history](verificacion.md) for historical PHP runtime results. A server-only test run needs Python and PHP, not .NET.
+The PHP harness independently launches actual temporary PHP servers, creates owned ZIP fixtures, exercises endpoints/configuration failures, and cleans up. A server-only test run needs Python and PHP, not .NET.
 
 Desktop --verify-live performs a real read-only production listing/comparison; --verify-live-download performs a real Faktury download into an owned temporary verification directory and removes it afterward. They require private process credentials and should be treated as production-facing verification, unlike --self-test. No such request is necessary to regenerate documentation.
 
@@ -463,7 +463,7 @@ The essential publish flags are:
 -p:PublishTrimmed=false -p:DebugType=None -p:DebugSymbols=false
 ```
 
-The script uses self-contained Release publishing, defaults to win-x64, accepts win-x86 and win-arm64, checks publish exit codes, copies two EXEs plus example/README, compresses a ZIP, and prints SHA256. It creates unique directories instead of deleting prior releases. Intermediate output is under ignored downloads/release-builds; releases are under ignored dist. Native runtime components may extract on launch. The original package's verification described above was on win-x64; architecture-specific verification is recorded separately in verificacion.md.
+The script uses self-contained Release publishing, defaults to win-x64, accepts win-x86 and win-arm64, checks publish exit codes, copies two EXEs plus example/README, compresses a ZIP, and prints SHA256. It creates unique directories instead of deleting prior releases. Intermediate output is under ignored downloads/release-builds; releases are under ignored dist. Native runtime components may extract on launch. The original package's verification described above was on win-x64; the win-x86 package also passed all 91 Windows checks under WOW64 on the development computer. Acceptance testing on a customer computer running 32-bit Windows remains pending.
 
 To publish the 32-bit desktop and CLI with the x86 runtime:
 
