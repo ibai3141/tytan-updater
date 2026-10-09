@@ -16,13 +16,13 @@ See [Desktop workflow, run instructions, and next phases](docs/desktop.md). All 
 
 ## Command-line application
 
-The separate console executable accepts the cloud client folder as its first parameter and a local version folder as its second. Provisionally, that local folder must contain `installation.json` in the existing example format. It downloads only newer ZIPs and prints `No updates available.` when all matching server versions are equal or older. It does not install updates.
+The separate console executable accepts exactly two folder names: the cloud client folder and the installed product folder, such as `Faktury_008.000.042`. It extracts the product/version from that name without reading a JSON file. It downloads a newer ZIP into `downloads/<client-folder>` under the current directory, or prints `No updates available.` when the server version is equal or older. It does not install updates.
 
 ```powershell
-dotnet run --project cli/Tytan.Updater.Cli --configuration Release -- Barcin_Wodbar "C:/path/to/local-version-folder"
+dotnet run --project cli/Tytan.Updater.Cli --configuration Release -- Barcin_Wodbar Faktury_008.000.042
 ```
 
-Set the server credentials in the process environment first. See [CLI setup, arguments, credentials, output, and checks](docs/cli.md). The definitive meaning/format of the second folder is pending confirmation.
+Set the server credentials in the process environment first. See [CLI setup, arguments, credentials, output, and checks](docs/cli.md).
 
 ## Delivered files
 

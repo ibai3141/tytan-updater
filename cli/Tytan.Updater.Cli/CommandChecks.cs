@@ -13,11 +13,6 @@ internal static class CommandChecks
     {
         string root = Path.Combine(Path.GetTempPath(), "tytan-cli-check-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
-        string source = Path.Combine(root, "installation.json");
-        string json = """
-            {"clientFolder":"TestClient","products":[{"name":"Faktury","installedVersion":"008.000.042"}]}
-            """;
-        await File.WriteAllTextAsync(source, json);
         int passed = 0;
 
         try
@@ -32,11 +27,12 @@ internal static class CommandChecks
 
             async Task<(int Code, string Out, string Error, int Requests)> Run(string[] args,
                 string version = "008.000.043", bool empty = false, bool unauthorized = false,
-                bool invalidZip = false, string password = "test-password", CancellationToken token = default)
+                bool invalidZip = false, string password = "test-password", CancellationToken token = default,
+                string? outputRoot = null, string product = "Faktury")
             {
                 int requests = 0;
-                var entry = new RemoteEntry("Faktury_" + version + ".zip", "file", bytes.Length,
-                    "2026-10-09 10:00:00", "TestClient/Faktury_" + version + ".zip");
+                var entry = new RemoteEntry(product + "_" + version + ".zip", "file", bytes.Length,
+                    "2026-10-09 10:00:00", "TestClient/" + product + "_" + version + ".zip");
                 using var http = new HttpClient(new Handler(request =>
                 {
                     requests++;
@@ -65,7 +61,7 @@ internal static class CommandChecks
                 using var output = new StringWriter();
                 using var error = new StringWriter();
                 int code = await Command.RunAsync(args, api, output, error,
-                    () => new Credentials("test-user", password), token);
+                    () => new Credentials("test-user", password), token, outputRoot ?? Path.Combine(root, "downloads"));
                 return (code, output.ToString(), error.ToString(), requests);
             }
 
@@ -76,7 +72,7 @@ internal static class CommandChecks
                 Console.WriteLine("PASS: " + name);
             }
 
-            string[] standard = ["TestClient", root];
+            string[] standard = ["TestClient", "Faktury_008.000.042"];
             var result = await Run(standard, version: "008.000.042");
             Check(result.Code == 0 && result.Out.Contains("No updates available.") && result.Requests == 1 &&
                 !Directory.Exists(Path.Combine(root, "downloads")), "equal version does not download");
@@ -86,17 +82,31 @@ internal static class CommandChecks
                 "older server package does not downgrade");
 
             result = await Run(standard);
-            string target = Path.Combine(root, "downloads", "Faktury_008.000.043.zip");
+            string target = Path.Combine(root, "downloads", "TestClient", "Faktury_008.000.043.zip");
             Check(result.Code == 0 && result.Requests == 2 && File.ReadAllBytes(target).SequenceEqual(bytes) &&
-                result.Out.Contains("Downloaded 1 update(s).") && await File.ReadAllTextAsync(source) == json,
-                "newer ZIP downloads with authentication and leaves installed version unchanged");
+                result.Out.Contains("Downloaded 1 update(s).") &&
+                !Directory.EnumerateFiles(root, "*.json", SearchOption.AllDirectories).Any(),
+                "two folder names download a newer ZIP without any local JSON or installation folder");
 
             result = await Run(standard);
             Check(result.Code == 1 && result.Error.Contains("already exists") && File.ReadAllBytes(target).SequenceEqual(bytes),
                 "existing ZIP is preserved");
 
-            result = await Run(["WrongClient", root]);
-            Check(result.Code == 1 && result.Requests == 0, "client mismatch is rejected before HTTP");
+            result = await Run(["../TestClient", standard[1]]);
+            Check(result.Code == 1 && result.Requests == 0, "invalid client folder is rejected before HTTP");
+
+            foreach (string invalid in new[] { "Faktury", "Faktury_008.00.042", "Faktury_008.000.042.zip",
+                "../Faktury_008.000.042", @"C:\Faktury_008.000.042", "_008.000.042" })
+            {
+                result = await Run(["TestClient", invalid]);
+                Check(result.Code == 1 && result.Requests == 0, "invalid installed folder is rejected: " + invalid);
+            }
+
+            result = await Run(["TestClient", "Product_With_Underscores_008.000.042"],
+                version: "008.000.042", product: "Product_With_Underscores");
+            Check(result.Code == 0 && result.Out.Contains("No updates available.") &&
+                result.Out.Contains("Product_With_Underscores: installed 008.000.042"),
+                "product names containing underscores are parsed at the last underscore");
 
             result = await Run(standard, empty: true);
             Check(result.Code == 1 && result.Error.Contains("No matching package") && !result.Out.Contains("No updates available."),
@@ -110,8 +120,8 @@ internal static class CommandChecks
                 "missing credentials prevent HTTP requests");
 
             string badOutput = Path.Combine(root, "invalid-download");
-            result = await Run(["TestClient", root, "--output", badOutput], invalidZip: true);
-            Check(result.Code == 1 && !Directory.EnumerateFileSystemEntries(badOutput).Any(),
+            result = await Run(standard, invalidZip: true, outputRoot: badOutput);
+            Check(result.Code == 1 && !Directory.EnumerateFiles(badOutput, "*", SearchOption.AllDirectories).Any(),
                 "invalid ZIP leaves no final or partial file");
 
             using var cancelled = new CancellationTokenSource();
@@ -122,8 +132,11 @@ internal static class CommandChecks
             result = await Run(["TestClient"]);
             Check(result.Code == 2 && result.Error.Contains("Usage:"), "invalid arguments return usage and code 2");
 
+            result = await Run(["TestClient", standard[1], "--output", root]);
+            Check(result.Code == 2 && result.Requests == 0, "only two positional arguments are accepted");
+
             result = await Run(["--help"]);
-            Check(result.Code == 0 && result.Out.Contains("installation.json") && result.Requests == 0,
+            Check(result.Code == 0 && result.Out.Contains("Faktury_008.000.042") && result.Requests == 0,
                 "help runs without credentials or HTTP");
 
             Console.WriteLine($"All {passed} CLI checks passed.");

@@ -131,3 +131,10 @@ The retained Python harness tests the three actual PHP files independently of .N
 - All 12 local CLI checks passed: equal/older/newer versions, authenticated request paths and ZIP bytes, unchanged installed metadata, existing destination preservation, customer mismatch before HTTP, missing package handling, authentication failure, missing password, invalid ZIP cleanup, cancellation, usage, and help.
 - The compiled console executable's --help output was checked directly in PowerShell. The existing desktop Release build passed with zero warnings and errors.
 - These new checks use local temporary fixtures and an injected HTTP handler. No new production download was performed for this change. Earlier real production download evidence remains recorded above.
+
+### Corrected two-name CLI contract
+
+- The user clarified that the second argument is the installed folder's name, not a local directory containing JSON. This supersedes the initial provisional CLI contract above.
+- The CLI now accepts exactly two positional names, for example `Barcin_Wodbar Faktury_008.000.042`. It derives the product and version from the last underscore; it reads no local JSON and requires no existing installed directory. ZIPs are saved in `downloads/<client-folder>` under the current working directory.
+- All 20 revised CLI checks passed, including operation without a JSON file or installed directory, invalid version/name/path rejection before HTTP, product names containing underscores, and rejection of extra arguments. Existing comparison, authentication, cancellation, and validated-download checks remain covered.
+- No production request or server change was needed for this correction. The desktop application's separate JSON workflow is unchanged.

@@ -6,19 +6,20 @@ internal sealed record Credentials(string Username, string Password);
 
 internal static class Command
 {
-    internal const string Usage = "Usage: Tytan.Updater.Cli <client-folder> <local-version-folder> [--output <download-folder>]";
+    internal const string Usage = "Usage: Tytan.Updater.Cli <client-folder> <installed-folder-name>";
 
     internal static async Task<int> RunAsync(string[] args, CloudApiClient api, TextWriter output,
-        TextWriter error, Func<Credentials> credentials, CancellationToken token)
+        TextWriter error, Func<Credentials> credentials, CancellationToken token, string? downloadRoot = null)
     {
         if (args.Length == 1 && args[0] is "--help" or "-h")
         {
             await output.WriteLineAsync(Usage);
-            await output.WriteLineAsync("The local folder must contain installation.json. Only newer ZIPs are downloaded; installation is not performed.");
+            await output.WriteLineAsync("Example: Tytan.Updater.Cli Barcin_Wodbar Faktury_008.000.042");
+            await output.WriteLineAsync("The installed folder name supplies the product and version. No local file is read. Newer ZIPs are saved in downloads/<client-folder> under the current directory.");
             return 0;
         }
 
-        if (args.Length is not (2 or 4) || (args.Length == 4 && args[2] != "--output"))
+        if (args.Length != 2)
         {
             await error.WriteLineAsync(Usage);
             return 2;
@@ -28,13 +29,23 @@ internal static class Command
         {
             token.ThrowIfCancellationRequested();
 
-            // Provisional adapter: replace only this source when the real format is supplied.
-            string localFolder = Path.GetFullPath(args[1]);
-            LocalInstallation installation = InstallationFileReader.Read(Path.Combine(localFolder, "installation.json"));
-            if (!InstallationFileReader.ValidName(args[0]) || args[0] != installation.ClientFolder)
+            if (!InstallationFileReader.ValidName(args[0]))
             {
-                throw new InvalidDataException("The client-folder argument must exactly match clientFolder in installation.json.");
+                throw new InvalidDataException("The first argument must be a single client folder name.");
             }
+
+            // Parse the final underscore: product names may themselves contain underscores.
+            string installedFolder = args[1];
+            int separator = installedFolder.LastIndexOf('_');
+            if (!InstallationFileReader.ValidName(installedFolder) || separator <= 0 ||
+                !InstallationFileReader.ValidName(installedFolder[..separator]) ||
+                !PackageVersion.TryParse(installedFolder[(separator + 1)..], out _))
+            {
+                throw new InvalidDataException("The second argument must be an installed folder name such as Faktury_008.000.042 (product_NNN.NNN.NNN).");
+            }
+
+            var product = new InstalledProduct(installedFolder[..separator], installedFolder[(separator + 1)..]);
+            var installation = new LocalInstallation(args[0], new[] { product });
 
             Credentials account = credentials();
             if (string.IsNullOrEmpty(account.Password))
@@ -42,8 +53,8 @@ internal static class Command
                 throw new InvalidDataException("Set TYTAN_API_PASSWORD before running the command.");
             }
 
-            string destination = args.Length == 4
-                ? Path.GetFullPath(args[3]) : Path.Combine(localFolder, "downloads");
+            string destination = Path.Combine(downloadRoot ?? Path.Combine(Environment.CurrentDirectory, "downloads"),
+                installation.ClientFolder);
             await output.WriteLineAsync("Checking cloud folder: " + installation.ClientFolder);
             IReadOnlyList<RemoteEntry> entries = await api.ListAsync(installation.ClientFolder,
                 account.Username, account.Password, token);
