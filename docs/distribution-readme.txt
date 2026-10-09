@@ -7,12 +7,19 @@ Use the build matching your Windows architecture (win-x64 or win-arm64).
 DESKTOP INTERFACE
 
 Double-click Tytan.Updater.Desktop.exe.
-Open your installation JSON file, or click Load example for a demonstration.
-The included installation.example.json contains test versions, not detected installed versions.
+First use: enter Client folder and Installed folder, for example:
+Client folder: Barcin_Wodbar
+Installed folder: Faktury_008.000.042
+Use the customer's actual folder names and installed version.
 Enter the server username and password supplied by your administrator.
-Click Check for updates, select an available update, and click Download selected update.
+Click Check for updates (or press Enter). After a successful check, the two folder names
+are remembered for your Windows user. Next time, just enter the password and check.
+Select an available update and click Download selected update.
 Choose where to save the ZIP. Open download folder locates a completed download.
-The final installed-version file integration is still pending; this interface uses the provisional JSON format.
+No example or installation JSON needs to be loaded. Optional JSON import remains available.
+Only folder names are saved in %LOCALAPPDATA%\TytanUpdater\folders.json, never credentials.
+When the actual installed version changes, edit Installed folder accordingly.
+The included installation.example.json is demonstration/test data, not detected installed versions.
 
 COMMAND LINE
 

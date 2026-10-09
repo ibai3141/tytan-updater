@@ -1,8 +1,16 @@
 # Local updater application
 
-Updated: October 8, 2026.
+Updated: October 9, 2026.
 
 For customer delivery, see [Windows distribution](distribution.md). The publishing script creates a portable ZIP with self-contained desktop and console executables; customers do not need this repository or a separate .NET runtime installation.
+
+## Current workflow: direct folder names and remembered configuration
+
+On first launch, enter Client folder (the customer's cloud directory) and Installed folder (the product/version name, such as Faktury_008.000.042), then the server password. Click Check for updates or press Enter. No example or installation JSON needs to be loaded. The username defaults to TytanSQL. After successful listing/comparison, only the two folder names are saved to %LOCALAPPDATA%\TytanUpdater\folders.json. No credentials are saved. On subsequent launches those names are restored, so the user only enters the password and checks again.
+
+The installed version is taken from the entered folder name, not detected from this computer. Edit that name when the actual installed version changes; downloading a ZIP does not update it. Editing either folder clears old results and download selection. Invalid names stop before HTTP. Rejected credentials do not replace remembered settings. Missing/corrupt saved settings recover to empty inputs and an explanatory message, without silently using example versions. Failure to save settings does not invalidate a successful comparison and is reported in the status.
+
+Import installation file (optional) preserves the provisional JSON workflow for multiple products. It is no longer required for normal single-product use and imported example files are not remembered as a customer's direct configuration. The definitive installation-file integration remains pending. The historical phases below describe how the application was built; the direct-entry workflow supersedes their requirement to load a file first.
 
 ## Agreed workflow
 
@@ -27,7 +35,7 @@ Phase 1 originally made no API calls. Phase 2 now adds the cloud listing describ
 
 ## Phase 2: HTTPS cloud-folder listing
 
-Load an installation file or the example first. Enter the shared username and password, then click Check for updates. The request is:
+Enter the two folder names (restored automatically after the first successful check), or optionally import an installation file. Enter the shared username and password, then click Check for updates. The request is:
 
 ```text
 https://tytan.poznan.pl/SQLupdate/api.php?dir=<loaded-clientFolder>

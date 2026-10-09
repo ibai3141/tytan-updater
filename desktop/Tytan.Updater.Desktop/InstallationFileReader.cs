@@ -11,6 +11,25 @@ internal sealed record LocalInstallation(string ClientFolder, IReadOnlyList<Inst
 
 internal static class InstallationFileReader
 {
+    public static LocalInstallation FromFolderNames(string clientFolder, string installedFolder)
+    {
+        if (!ValidName(clientFolder))
+        {
+            throw new InvalidDataException("Enter a valid client folder name.");
+        }
+
+        // Product names can contain underscores; only the last separates the version.
+        int separator = installedFolder.LastIndexOf('_');
+        if (!ValidName(installedFolder) || separator <= 0 || !ValidName(installedFolder[..separator]) ||
+            !PackageVersion.TryParse(installedFolder[(separator + 1)..], out _))
+        {
+            throw new InvalidDataException("Enter an installed folder name such as Faktury_008.000.042 (product_NNN.NNN.NNN).");
+        }
+
+        return new LocalInstallation(clientFolder,
+            new[] { new InstalledProduct(installedFolder[..separator], installedFolder[(separator + 1)..]) });
+    }
+
     public static LocalInstallation Read(string path)
     {
         string json = File.ReadAllText(path);

@@ -2,21 +2,25 @@ namespace Tytan.Updater.Desktop;
 
 internal sealed class MainForm : Form
 {
-    private readonly Label clientLabel = new() { AutoSize = true, Text = "Client folder: no file loaded" };
+    private readonly Label clientLabel = new() { AutoSize = true, Text = "Set your client and installed folder names below." };
+    private readonly TextBox clientFolderBox = new() { Width = 190, PlaceholderText = "Customer folder" };
+    private readonly TextBox installedFolderBox = new() { Width = 280, PlaceholderText = "Product_NNN.NNN.NNN" };
+    private readonly string? settingsPath;
+    private bool updatingInputs;
+    private bool manualInput = true;
     private readonly Label fileLabel = new()
     {
         AutoSize = false,
         AutoEllipsis = true,
         Height = 26,
         Dock = DockStyle.Fill,
-        Text = "Installation file: none"
+        Text = "Folder names are remembered after a successful check."
     };
-    private readonly Label statusLabel = new() { AutoSize = true, Text = "Load your installation file to view installed versions." };
+    private readonly Label statusLabel = new() { AutoSize = true, Text = "Enter the two folder names and your password, then check for updates." };
     private readonly DataGridView productsGrid = new();
     private readonly DataGridView cloudGrid = new();
-    private readonly Button openButton = new() { Text = "Open installation file", AutoSize = true, Padding = new Padding(10, 4, 10, 4) };
-    private readonly Button exampleButton = new() { Text = "Load example", AutoSize = true, Padding = new Padding(10, 4, 10, 4) };
-    private readonly Button queryButton = new() { Text = "Check for updates", AutoSize = true, Enabled = false };
+    private readonly Button openButton = new() { Text = "Import installation file (optional)", AutoSize = true, Padding = new Padding(10, 4, 10, 4) };
+    private readonly Button queryButton = new() { Text = "Check for updates", AutoSize = true };
     private readonly Button cancelButton = new() { Text = "Cancel", AutoSize = true, Enabled = false };
     private readonly Button downloadButton = new()
     {
@@ -43,9 +47,10 @@ internal sealed class MainForm : Form
     private CancellationTokenSource? operationCancellation;
     private LocalInstallation? installation;
 
-    public MainForm(string? initialFile = null, CloudApiClient? api = null)
+    public MainForm(string? initialFile = null, CloudApiClient? api = null, string? settingsPath = null)
     {
         this.api = api ?? new CloudApiClient();
+        this.settingsPath = settingsPath;
         Text = "Tytan Updater";
         ClientSize = new Size(980, 700);
         MinimumSize = new Size(900, 600);
@@ -91,9 +96,18 @@ internal sealed class MainForm : Form
         };
 
         openButton.Click += (_, _) => ChooseFile();
-        exampleButton.Click += (_, _) => TryLoad(Path.Combine(AppContext.BaseDirectory, "installation.example.json"), true);
         buttons.Controls.Add(openButton);
-        buttons.Controls.Add(exampleButton);
+        fileLabel.Dock = DockStyle.None;
+        fileLabel.Width = 580;
+        buttons.Controls.Add(fileLabel);
+
+        var folderInputs = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, Margin = new Padding(0, 0, 0, 8) };
+        folderInputs.Controls.Add(new Label { Text = "Client folder", AutoSize = true, Padding = new Padding(0, 5, 0, 0) });
+        folderInputs.Controls.Add(clientFolderBox);
+        folderInputs.Controls.Add(new Label { Text = "Installed folder", AutoSize = true, Padding = new Padding(0, 5, 0, 0) });
+        folderInputs.Controls.Add(installedFolderBox);
+        clientFolderBox.TextChanged += (_, _) => FolderInputsChanged();
+        installedFolderBox.TextChanged += (_, _) => FolderInputsChanged();
 
         var connection = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, Margin = new Padding(0, 0, 0, 14) };
         connection.Controls.Add(new Label { Text = "Username", AutoSize = true, Padding = new Padding(0, 5, 0, 0) });
@@ -103,6 +117,7 @@ internal sealed class MainForm : Form
         connection.Controls.Add(queryButton);
         connection.Controls.Add(cancelButton);
         queryButton.Click += async (_, _) => await QueryCloudAsync();
+        AcceptButton = queryButton;
         cancelButton.Click += (_, _) => operationCancellation?.Cancel();
         downloadButton.Click += async (_, _) => await ChooseDownloadAsync();
         openDownloadFolder.LinkClicked += (_, _) => OpenDownloadFolder();
@@ -153,7 +168,7 @@ internal sealed class MainForm : Form
 
         layout.Controls.Add(heading, 0, 0);
         layout.Controls.Add(clientLabel, 0, 1);
-        layout.Controls.Add(fileLabel, 0, 2);
+        layout.Controls.Add(folderInputs, 0, 2);
         layout.Controls.Add(buttons, 0, 3);
         layout.Controls.Add(connection, 0, 4);
         layout.Controls.Add(tabs, 0, 5);
@@ -169,6 +184,21 @@ internal sealed class MainForm : Form
         if (initialFile is not null)
         {
             Shown += (_, _) => TryLoad(initialFile, false);
+        }
+        else if (settingsPath is not null)
+        {
+            try
+            {
+                if (FolderPreferences.Read(settingsPath) is { } saved)
+                {
+                    SetFolderInputs(saved.ClientFolder, saved.InstalledFolder);
+                    statusLabel.Text = "Saved folder names restored. Enter your password and check for updates.";
+                }
+            }
+            catch (Exception error) when (error is IOException or InvalidDataException or UnauthorizedAccessException or System.Text.Json.JsonException)
+            {
+                statusLabel.Text = "Saved folder settings could not be loaded. Enter your two folder names again.";
+            }
         }
     }
 
@@ -209,9 +239,20 @@ internal sealed class MainForm : Form
         }
         // Validate the whole file before replacing any displayed state.
         LocalInstallation loaded = InstallationFileReader.Read(path);
+        manualInput = false;
+        updatingInputs = true;
+        clientFolderBox.Text = loaded.ClientFolder;
+        installedFolderBox.Text = loaded.Products.Count == 1
+            ? loaded.Products[0].Name + "_" + loaded.Products[0].InstalledVersion : "";
+        updatingInputs = false;
+        ApplyInstallation(loaded, "Installation file: " + Path.GetFullPath(path), example);
+    }
+
+    private void ApplyInstallation(LocalInstallation loaded, string source, bool example)
+    {
         installation = loaded;
         clientLabel.Text = "Client folder: " + loaded.ClientFolder;
-        fileLabel.Text = "Installation file: " + Path.GetFullPath(path);
+        fileLabel.Text = source;
         productsGrid.Rows.Clear();
         cloudGrid.Rows.Clear();
         comparisons = Array.Empty<ProductUpdate>();
@@ -237,26 +278,40 @@ internal sealed class MainForm : Form
 
     internal async Task QueryCloudAsync()
     {
-        if (installation is null || operationCancellation is not null)
+        if (operationCancellation is not null)
         {
             return;
         }
+        if (installation is null)
+        {
+            try
+            {
+                ApplyInstallation(InstallationFileReader.FromFolderNames(clientFolderBox.Text, installedFolderBox.Text),
+                    "Source: folder names entered in this window.", false);
+            }
+            catch (InvalidDataException error)
+            {
+                statusLabel.Text = error.Message;
+                return;
+            }
+        }
 
+        if (installation is not { } current) return;
         using var cancellation = new CancellationTokenSource();
         operationCancellation = cancellation;
         SetBusy(true);
         cloudGrid.Rows.Clear();
         ResetComparisons();
-        statusLabel.Text = "Loading cloud folder: " + installation.ClientFolder + "...";
+        statusLabel.Text = "Loading cloud folder: " + current.ClientFolder + "...";
 
         try
         {
             IReadOnlyList<RemoteEntry> entries = await api.ListAsync(
-                installation.ClientFolder, usernameBox.Text, passwordBox.Text, cancellation.Token);
+                current.ClientFolder, usernameBox.Text, passwordBox.Text, cancellation.Token);
             cancellation.Token.ThrowIfCancellationRequested();
             if (!IsDisposed)
             {
-                comparisons = UpdateComparison.Compare(installation, entries);
+                comparisons = UpdateComparison.Compare(current, entries);
                 DisplayComparisons();
                 foreach (RemoteEntry entry in entries)
                 {
@@ -267,6 +322,17 @@ internal sealed class MainForm : Form
                 statusLabel.Text = entries.Count == 0
                     ? "The client's cloud folder is empty. No packages are available."
                     : $"Checked {comparisons.Count} installed products: {updates} update(s) available. Cloud folder shows all entries.";
+                if (manualInput && settingsPath is not null)
+                {
+                    try
+                    {
+                        new FolderPreferences(clientFolderBox.Text, installedFolderBox.Text).Save(settingsPath);
+                    }
+                    catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+                    {
+                        statusLabel.Text += " Folder names could not be saved; enter them again next time.";
+                    }
+                }
             }
         }
         catch (OperationCanceledException)
@@ -324,8 +390,8 @@ internal sealed class MainForm : Form
 
     private void SetBusy(bool busy)
     {
-        openButton.Enabled = exampleButton.Enabled = usernameBox.Enabled = passwordBox.Enabled = !busy;
-        queryButton.Enabled = !busy && installation is not null;
+        openButton.Enabled = clientFolderBox.Enabled = installedFolderBox.Enabled = usernameBox.Enabled = passwordBox.Enabled = !busy;
+        queryButton.Enabled = !busy;
         cancelButton.Enabled = busy;
         productsGrid.Enabled = !busy;
         UpdateDownloadButton();
@@ -476,6 +542,30 @@ internal sealed class MainForm : Form
         passwordBox.Text = password;
     }
 
+    internal void SetFolderInputs(string clientFolder, string installedFolder)
+    {
+        clientFolderBox.Text = clientFolder;
+        installedFolderBox.Text = installedFolder;
+    }
+
+    private void FolderInputsChanged()
+    {
+        if (updatingInputs || operationCancellation is not null) return;
+        manualInput = true;
+        installation = null;
+        comparisons = Array.Empty<ProductUpdate>();
+        productsGrid.Rows.Clear();
+        cloudGrid.Rows.Clear();
+        downloadProgress.Visible = false;
+        downloadedPath = null;
+        openDownloadFolder.Visible = false;
+        clientLabel.Text = "Client folder: " + clientFolderBox.Text;
+        fileLabel.Text = "Folder names are remembered after a successful check.";
+        statusLabel.Text = "Folder names changed. Check for updates to refresh the results.";
+        note.Text = "The installed version comes from the folder name you enter. Downloading does not install updates.";
+        UpdateDownloadButton();
+    }
+
     internal void CancelCloudQuery() => operationCancellation?.Cancel();
     internal int CloudEntryCount => cloudGrid.Rows.Count;
     internal string StatusText => statusLabel.Text;
@@ -488,6 +578,8 @@ internal sealed class MainForm : Form
 
     // Small inspection surface for the window smoke check, without network access.
     internal string? LoadedClient => installation?.ClientFolder;
+    internal string ClientFolderInput => clientFolderBox.Text;
+    internal string InstalledFolderInput => installedFolderBox.Text;
     internal int ProductCount => productsGrid.Rows.Count;
     internal string DisplayedVersion(int row) => productsGrid.Rows[row].Cells[1].Value as string
         ?? throw new InvalidOperationException("The product row has no installed version.");

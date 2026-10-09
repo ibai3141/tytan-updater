@@ -30,23 +30,7 @@ internal static class Command
         {
             token.ThrowIfCancellationRequested();
 
-            if (!InstallationFileReader.ValidName(args[0]))
-            {
-                throw new InvalidDataException("The first argument must be a single client folder name.");
-            }
-
-            // Parse the final underscore: product names may themselves contain underscores.
-            string installedFolder = args[1];
-            int separator = installedFolder.LastIndexOf('_');
-            if (!InstallationFileReader.ValidName(installedFolder) || separator <= 0 ||
-                !InstallationFileReader.ValidName(installedFolder[..separator]) ||
-                !PackageVersion.TryParse(installedFolder[(separator + 1)..], out _))
-            {
-                throw new InvalidDataException("The second argument must be an installed folder name such as Faktury_008.000.042 (product_NNN.NNN.NNN).");
-            }
-
-            var product = new InstalledProduct(installedFolder[..separator], installedFolder[(separator + 1)..]);
-            var installation = new LocalInstallation(args[0], new[] { product });
+            LocalInstallation installation = InstallationFileReader.FromFolderNames(args[0], args[1]);
 
             Credentials account = credentials();
             if (string.IsNullOrEmpty(account.Password))

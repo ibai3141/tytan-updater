@@ -30,14 +30,14 @@ Each release contains:
 | --- | --- |
 | Tytan.Updater.Desktop.exe | Double-click to open the main window |
 | Tytan.Updater.Cli.exe | Run from a terminal with the two folder names |
-| installation.example.json | Demonstration data for the desktop window only |
+| installation.example.json | Optional demonstration/test fixture; not required for normal use |
 | README.txt | End-user instructions, including credentials and console invocation |
 
 Extract the whole ZIP before use. Runtime libraries bundled in each executable may be extracted automatically by .NET on launch. This is a portable delivery; it does not create shortcuts, register an installer, or install Tytan updates. An MSI/setup wizard is not needed for this delivery.
 
 ## User workflow
 
-Double-click the desktop executable, load local installation information or the example, enter credentials, compare, and choose a newer ZIP to download. The desktop still uses its provisional installation JSON; its definitive local-file integration remains pending.
+Double-click the desktop executable. On first use, enter the cloud client folder and installed product folder name, such as Barcin_Wodbar and Faktury_008.000.042, then credentials. A successful check remembers the two folder names under the current Windows user's LocalAppData; subsequent launches need only credentials and a check. No JSON needs to be loaded. Optional installation JSON import is still supported, and final automatic installed-version detection remains pending. Choose a newer ZIP to download through Save As. Remembered names do not change when a ZIP is downloaded; update the installed folder name when its actual installed version changes.
 
 For the console, configure credentials as described in the included README, then run from PowerShell:
 
