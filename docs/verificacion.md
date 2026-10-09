@@ -169,3 +169,11 @@ The retained Python harness tests the three actual PHP files independently of .N
 - Checked that every C# and PHP excerpt in the complete technical guide matches the actual source text, ignoring whitespace. Validated local guide links, paired code fences, Word ZIP integrity, matching Word/Markdown heading sequences, code/table presence, and English metadata.
 - The exporter now generates all three Word guides with document-specific titles/headers, hyperlinks, repeating table headers, code styling, and page numbers.
 - The preserved ZIP's SHA256 remains 29A0E00943D989D0300CA11FE0AC78F8FB306BEB03E90B88733000A2A5F99D7E. No executable was republished, no application/server behavior changed, and no production request was made for this documentation work. Windows check counts in the guides (67 desktop plus 24 CLI) refer to the previously verified retained implementation; no new application-test run is claimed for this documentation-only change.
+
+### Additional 32-bit Windows delivery
+
+- The user explicitly requires 32-bit Windows support. Added win-x86 to the publishing script's accepted runtimes and documented the architecture choice in the user/technical/distribution guides and included README. Application source and the retained workflow are unchanged.
+- Published dist/TytanUpdater-win-x86-20261009-103540-018b7c.zip, approximately 78.4 MiB, with self-contained x86 desktop/console executables, the example JSON, and README. SHA256: 5685444BDBB10E831B9F6ECAB6BD3BF56497C9E53DA3C1AA65C5A85859994A50.
+- Extracted the delivery separately. Both executable PE headers identify IMAGE_FILE_MACHINE_I386 (0x14c). IsWow64Process confirmed that each ran as a real 32-bit process on the x64 development computer. All 24 CLI and 67 desktop checks passed using these published executables, with DOTNET_ROOT/DOTNET_ROOT_X86 pointing away from an installed runtime.
+- This verifies x86 execution under WOW64; acceptance on an actual customer 32-bit Windows installation remains pending. No production request, package installation, or server change was performed.
+- The first x64 ZIP remains unchanged with SHA256 29A0E00943D989D0300CA11FE0AC78F8FB306BEB03E90B88733000A2A5F99D7E. Word copies of the technical and user guides were regenerated; the removed Reference and support section was not reintroduced.

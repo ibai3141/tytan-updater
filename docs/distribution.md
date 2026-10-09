@@ -10,7 +10,13 @@ From the repository on a Windows development machine with the .NET 9 SDK:
 ./scripts/publish_windows.ps1
 ```
 
-The default architecture is win-x64. To target Windows ARM64:
+The default architecture is win-x64. Windows 32-bit requires the separate win-x86 package; the x64 executable cannot run on 32-bit Windows. Publish both applications with the included 32-bit runtime:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/publish_windows.ps1 -Runtime win-x86
+```
+
+To target Windows ARM64:
 
 ```powershell
 ./scripts/publish_windows.ps1 -Runtime win-arm64

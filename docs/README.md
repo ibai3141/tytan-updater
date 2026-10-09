@@ -4,6 +4,8 @@ Updated: October 9, 2026. All guides are in English.
 
 The documented delivery is the retained first package, TytanUpdater-win-x64-20261009-094714-e05a10. Its desktop loads an installation JSON or the example; its console accepts exactly two folder names and asks for the save location in a window. Subsequent automatic-configuration changes were reverted. The retained executable ZIP is unchanged.
 
+A separate win-x86 package provides the same application workflow for 32-bit Windows, including the matching runtime. See [distribution instructions](distribution.md) to choose or publish the correct architecture.
+
 ## Main guides
 
 | Audience | Markdown | Word | Coverage |

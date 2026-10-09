@@ -38,3 +38,5 @@ The CLI does not read an installation JSON or require a real local directory. Th
 ## Portable Windows delivery
 
 The publishing script creates a Windows package containing self-contained desktop and console executables, the provisional desktop example, and end-user instructions. The first win-x64 ZIP was generated and extracted separately; all 24 CLI and 67 desktop checks passed using the published executables. No production requests were made. See [Windows distribution](distribution.md). Acceptance on representative customer hardware remains pending, as does the final desktop installation-file integration.
+
+The user also requires 32-bit support. A separate win-x86 package is now published with its x86 runtime. Both binaries were confirmed as 32-bit PE files and running WOW64 processes; all 91 Windows checks passed from the extracted x86 delivery on the development x64 computer. Acceptance on a real customer 32-bit Windows installation remains pending. The original x64 ZIP is preserved.

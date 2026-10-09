@@ -2,7 +2,9 @@ TYTAN UPDATER FOR WINDOWS
 
 Extract the ZIP into a writable folder before using either executable.
 The package contains its .NET runtime. No SDK or separate .NET installation is required.
-Use the build matching your Windows architecture (win-x64 or win-arm64).
+Use the build matching your Windows architecture: win-x86 for 32-bit Windows,
+win-x64 for 64-bit Intel/AMD Windows, or win-arm64 for Windows ARM64.
+The win-x86 package includes the 32-bit .NET runtime.
 
 DESKTOP INTERFACE
 

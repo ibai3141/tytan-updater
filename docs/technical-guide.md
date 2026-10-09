@@ -56,7 +56,7 @@ The CLI project links the existing reader, comparison, listing, and download sou
 
 ## Runtime and delivery
 
-Both projects target net9.0-windows with Windows Forms enabled. The desktop OutputType is WinExe; the CLI OutputType is Exe, so it retains terminal output. Development requires the .NET 9 SDK on Windows. The published win-x64 delivery includes its runtime and does not require the SDK or a separate .NET installation on the customer's PC.
+Both projects target net9.0-windows with Windows Forms enabled. The desktop OutputType is WinExe; the CLI OutputType is Exe, so it retains terminal output. Development requires the .NET 9 SDK on Windows. Self-contained distributions include their architecture-specific runtime and do not require the SDK or a separate .NET installation on the customer's PC. The additional win-x86 package provides native 32-bit executables and runtime, retaining the first distribution's application behavior. A win-x64 executable cannot run on 32-bit Windows.
 
 The PHP endpoint implementation is compatible with PHP 7.2.34, the hosting version reported during integration. It uses JSON and filesystem functions, without Composer, a database, or PHP's ZIP extension. PHP streams packages without opening their archive contents.
 
@@ -463,7 +463,13 @@ The essential publish flags are:
 -p:PublishTrimmed=false -p:DebugType=None -p:DebugSymbols=false
 ```
 
-The script uses self-contained Release publishing, defaults to win-x64, optionally accepts win-arm64, checks publish exit codes, copies two EXEs plus example/README, compresses a ZIP, and prints SHA256. It creates unique directories instead of deleting prior releases. Intermediate output is under ignored downloads/release-builds; releases are under ignored dist. Native runtime components may extract on launch. Only win-x64 was verified for the retained package.
+The script uses self-contained Release publishing, defaults to win-x64, accepts win-x86 and win-arm64, checks publish exit codes, copies two EXEs plus example/README, compresses a ZIP, and prints SHA256. It creates unique directories instead of deleting prior releases. Intermediate output is under ignored downloads/release-builds; releases are under ignored dist. Native runtime components may extract on launch. The original package's verification described above was on win-x64; architecture-specific verification is recorded separately in verificacion.md.
+
+To publish the 32-bit desktop and CLI with the x86 runtime:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/publish_windows.ps1 -Runtime win-x86
+```
 
 The retained original ZIP is approximately 85.3 MiB, with SHA256 29A0E00943D989D0300CA11FE0AC78F8FB306BEB03E90B88733000A2A5F99D7E. It is preserved unchanged; the new user/technical guides are separate documentation artifacts.
 

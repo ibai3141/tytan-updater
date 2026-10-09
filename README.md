@@ -28,6 +28,8 @@ Set the server credentials in the process environment first. See [CLI setup, arg
 
 For customer computers, build a portable Windows ZIP with `./scripts/publish_windows.ps1`. It includes self-contained desktop and console executables, the desktop example file, and end-user instructions; customers do not need the source repository or a separate .NET installation. See [Windows distribution](docs/distribution.md).
 
+For 32-bit Windows, publish with `-Runtime win-x86`; this bundles x86 executables and their 32-bit runtime. The default win-x64 package is for 64-bit Intel/AMD Windows. Both packages retain the same desktop and two-argument CLI workflow.
+
 | File | Purpose |
 | --- | --- |
 | server/api.php | JSON listing of folders and ZIP packages |

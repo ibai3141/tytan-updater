@@ -1,5 +1,5 @@
 param(
-    [ValidateSet('win-x64', 'win-arm64')]
+    [ValidateSet('win-x86', 'win-x64', 'win-arm64')]
     [string]$Runtime = 'win-x64'
 )
 

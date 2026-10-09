@@ -2,7 +2,7 @@
 
 Updated: October 9, 2026. Language: English.
 
-This guide is for the retained first Windows package: TytanUpdater-win-x64-20261009-094714-e05a10. It covers the desktop window and the console executable. The desktop has Open installation file and Load example buttons. It does not automatically load a customer's remembered configuration.
+This guide covers the retained first Windows application's behavior, available in the original win-x64 package and the additional win-x86 (32-bit) package. It covers the desktop window and the console executable. The desktop has Open installation file and Load example buttons. It does not automatically load a customer's remembered configuration.
 
 ## What the program does
 
@@ -21,7 +21,7 @@ Both use the same server account supplied by the administrator. The password alo
 
 ## Before you begin
 
-You need a Windows 64-bit computer for the retained win-x64 package, an internet connection to the update server, the server credentials, and the actual customer/product/version information supplied by your administrator. Choose a download folder you can write to.
+Choose win-x86 for 32-bit Windows or win-x64 for 64-bit Intel/AMD Windows. The original TytanUpdater-win-x64-20261009-094714-e05a10 package requires 64-bit Windows; use the new win-x86 package on a 32-bit computer. Each package includes its matching .NET runtime. You also need an internet connection to the update server, server credentials, and actual customer/product/version information supplied by your administrator. Choose a download folder you can write to.
 
 You do not need Visual Studio, the .NET SDK, PHP, or the source repository. This package includes its .NET runtime. The console also opens a Windows Save As window, so it must run in an interactive Windows session.
 
