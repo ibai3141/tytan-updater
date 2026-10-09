@@ -1,4 +1,5 @@
 downloads/
+dist/
 **/bin/
 **/obj/
 *.local.json

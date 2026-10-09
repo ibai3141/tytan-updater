@@ -26,6 +26,8 @@ Set the server credentials in the process environment first. See [CLI setup, arg
 
 ## Delivered files
 
+For customer computers, build a portable Windows ZIP with `./scripts/publish_windows.ps1`. It includes self-contained desktop and console executables, the desktop example file, and end-user instructions; customers do not need the source repository or a separate .NET installation. See [Windows distribution](docs/distribution.md).
+
 | File | Purpose |
 | --- | --- |
 | server/api.php | JSON listing of folders and ZIP packages |
@@ -47,6 +49,7 @@ Deploy the three PHP files to SQLupdate. Keep the hosting's working authenticati
 - [Results and verification history](docs/verificacion.md)
 - [Local Windows application](docs/desktop.md)
 - [Command-line updater](docs/cli.md)
+- [Windows executables and customer distribution](docs/distribution.md)
 - [Installation integration contract and pending inputs](docs/installation-contract.md)
 
 ## Production URLs

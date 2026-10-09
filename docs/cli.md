@@ -58,6 +58,8 @@ Incomplete downloads are removed. Completed ZIPs are not extracted or installed.
 
 ## Build, distribute, and test
 
+For a customer delivery containing both self-contained executables and instructions, use the [Windows distribution script](distribution.md). The command below publishes the console separately.
+
 ```powershell
 dotnet publish cli/Tytan.Updater.Cli --configuration Release --runtime win-x64 --self-contained true --output downloads/cli-publish
 & ./downloads/cli-publish/Tytan.Updater.Cli.exe Barcin_Wodbar Faktury_008.000.042

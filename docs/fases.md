@@ -32,3 +32,7 @@ Each desktop phase is delivered for review before moving to the next. Commits re
 On October 9, a separate Windows console executable was added at `cli/Tytan.Updater.Cli`. Following the user's final clarification, it accepts exactly two names: the cloud client folder and the installed product folder (for example, `Faktury_008.000.042`). When a newer ZIP is found, Save As lets the user choose its destination. No third argument is accepted and no dialog opens when up to date. It shares the desktop comparison/download implementation and does not install packages. Twenty-four revised CLI checks passed.
 
 The CLI does not read an installation JSON or require a real local directory. The desktop JSON workflow remains separate. See [CLI instructions](cli.md) for credentials, arguments, output paths, exit codes, and distribution.
+
+## Portable Windows delivery
+
+The publishing script creates a Windows package containing self-contained desktop and console executables, the provisional desktop example, and end-user instructions. The first win-x64 ZIP was generated and extracted separately; all 24 CLI and 67 desktop checks passed using the published executables. No production requests were made. See [Windows distribution](distribution.md). Acceptance on representative customer hardware remains pending, as does the final desktop installation-file integration.

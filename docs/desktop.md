@@ -2,6 +2,8 @@
 
 Updated: October 8, 2026.
 
+For customer delivery, see [Windows distribution](distribution.md). The publishing script creates a portable ZIP with self-contained desktop and console executables; customers do not need this repository or a separate .NET runtime installation.
+
 ## Agreed workflow
 
 The local Windows application will identify the client from local information, query the corresponding folder on the existing cloud API, compare available package versions with locally installed versions, and allow downloading newer ZIPs. Installation of those ZIPs remains a separate responsibility to confirm with Tytan.

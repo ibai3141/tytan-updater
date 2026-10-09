@@ -152,3 +152,12 @@ The retained Python harness tests the three actual PHP files independently of .N
 - All 24 revised CLI checks passed using injected HTTP responses and a destination chooser, including dialog cancellation, cancellation after selection, the selected path with spaces, and rejection of a third argument.
 - An additional temporary local harness invoked the actual production SaveFileDialog method, observed its Save update ZIP window on the dedicated STA thread, closed that process's dialog, and verified that it returned cancellation. This verifies real dialog opening/cancellation; successful saved-path downloading is covered by the injected chooser checks.
 - The CLI now targets net9.0-windows with Windows Forms while retaining console output. No production request, server change, or installation was performed. Instructions and help use only two parameters.
+
+### Portable Windows executable delivery
+
+- Added scripts/publish_windows.ps1 to publish both applications as self-contained single-file executables with native-library self-extraction, no trimming, and no debug symbols. The script creates unique staging/release directories and a ZIP, reports its SHA256, and stops on publishing failure. Credentials are not packaged.
+- Generated dist/TytanUpdater-win-x64-20261009-094714-e05a10.zip, approximately 85.3 MiB. It contains exactly Tytan.Updater.Desktop.exe, Tytan.Updater.Cli.exe, installation.example.json, and README.txt. Build staging and dist artifacts are ignored by Git; source publishing instructions are committed.
+- SHA256: 29A0E00943D989D0300CA11FE0AC78F8FB306BEB03E90B88733000A2A5F99D7E.
+- Extracted the ZIP into a new isolated directory and invoked the published console help, all 24 CLI checks, and all 67 desktop checks successfully. DOTNET_ROOT/DOTNET_ROOT_X64 pointed to an absent runtime directory and multilevel lookup was disabled in the child-process environment. No source files were needed in that extracted directory.
+- These checks ran on the development computer using local fixtures, without production requests. They do not replace acceptance on a representative customer computer or validate ARM64 hardware. Only win-x64 was built and checked in this delivery.
+- The interface still uses provisional installation JSON, while the console accepts two folder names and prompts for a save location. Neither application installs Tytan update packages.
