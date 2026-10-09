@@ -21,9 +21,7 @@ internal static class Program
                 return comparisons;
             }
             int cloud = CloudChecks.Run();
-            if (cloud != 0) return cloud;
-            int configured = ConfiguredClientChecks.Run();
-            return configured == 0 ? DownloadChecks.Run() : configured;
+            return cloud == 0 ? DownloadChecks.Run() : cloud;
         }
 
         if (args.Length == 1 && args[0] == "--verify-live")
@@ -42,8 +40,7 @@ internal static class Program
             return 1;
         }
 
-        Application.Run(new MainForm(args.Length == 1 ? Path.GetFullPath(args[0]) : null,
-            settingsPath: FolderPreferences.DefaultPath));
+        Application.Run(new MainForm(args.Length == 1 ? Path.GetFullPath(args[0]) : null));
         return 0;
     }
 }

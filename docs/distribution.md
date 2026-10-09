@@ -1,6 +1,6 @@
 # Windows distribution
 
-The user receives a ZIP containing two self-contained executables, an administrator provisioning script, a provisional test/example installation file, and English usage instructions. Application source code, PHP files, credentials, the .NET SDK, and build directories are not included. No separate .NET runtime installation is required.
+The user receives a ZIP containing two self-contained executables, a provisional example installation file, and English usage instructions. Source code, PHP files, credentials, the .NET SDK, and build directories are not included. No separate .NET runtime installation is required.
 
 ## Build a delivery
 
@@ -30,15 +30,14 @@ Each release contains:
 | --- | --- |
 | Tytan.Updater.Desktop.exe | Double-click to open the main window |
 | Tytan.Updater.Cli.exe | Run from a terminal with the two folder names |
-| installation.example.json | Optional demonstration/test fixture; not required for normal use |
+| installation.example.json | Demonstration data for the desktop window only |
 | README.txt | End-user instructions, including credentials and console invocation |
-| configure_desktop.ps1 | Administrator setup of the customer's local configuration, once per Windows user |
 
 Extract the whole ZIP before use. Runtime libraries bundled in each executable may be extracted automatically by .NET on launch. This is a portable delivery; it does not create shortcuts, register an installer, or install Tytan updates. An MSI/setup wizard is not needed for this delivery.
 
 ## User workflow
 
-The administrator provisions the computer once with configure_desktop.ps1 (see the included README or [desktop configuration](desktop.md)). Existing valid folders.json settings from the previous version are reused. The user double-clicks the desktop executable, enters the password, and checks for updates; folder-name fields and example/import buttons are absent. The app loads only the configured customer. Missing/invalid settings show an administrator-setup message, without querying all clients. Choose a newer ZIP to download through Save As. Configured versions do not change when a ZIP is downloaded; the administrator updates configuration when the actual installation changes. Final automatic installed-version detection remains pending.
+Double-click the desktop executable, load local installation information or the example, enter credentials, compare, and choose a newer ZIP to download. The desktop still uses its provisional installation JSON; its definitive local-file integration remains pending.
 
 For the console, configure credentials as described in the included README, then run from PowerShell:
 

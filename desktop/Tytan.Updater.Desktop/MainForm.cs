@@ -2,18 +2,20 @@ namespace Tytan.Updater.Desktop;
 
 internal sealed class MainForm : Form
 {
-    private readonly Label clientLabel = new() { AutoSize = true, Text = "Client configuration is not available." };
+    private readonly Label clientLabel = new() { AutoSize = true, Text = "Client folder: no file loaded" };
     private readonly Label fileLabel = new()
     {
         AutoSize = false,
         AutoEllipsis = true,
         Height = 26,
         Dock = DockStyle.Fill,
-        Text = "Ask your administrator to configure this computer."
+        Text = "Installation file: none"
     };
-    private readonly Label statusLabel = new() { AutoSize = true, Text = "Client configuration is missing. Ask your administrator to configure this computer." };
+    private readonly Label statusLabel = new() { AutoSize = true, Text = "Load your installation file to view installed versions." };
     private readonly DataGridView productsGrid = new();
     private readonly DataGridView cloudGrid = new();
+    private readonly Button openButton = new() { Text = "Open installation file", AutoSize = true, Padding = new Padding(10, 4, 10, 4) };
+    private readonly Button exampleButton = new() { Text = "Load example", AutoSize = true, Padding = new Padding(10, 4, 10, 4) };
     private readonly Button queryButton = new() { Text = "Check for updates", AutoSize = true, Enabled = false };
     private readonly Button cancelButton = new() { Text = "Cancel", AutoSize = true, Enabled = false };
     private readonly Button downloadButton = new()
@@ -41,7 +43,7 @@ internal sealed class MainForm : Form
     private CancellationTokenSource? operationCancellation;
     private LocalInstallation? installation;
 
-    public MainForm(string? initialFile = null, CloudApiClient? api = null, string? settingsPath = null)
+    public MainForm(string? initialFile = null, CloudApiClient? api = null)
     {
         this.api = api ?? new CloudApiClient();
         Text = "Tytan Updater";
@@ -56,9 +58,10 @@ internal sealed class MainForm : Form
             Dock = DockStyle.Fill,
             Padding = new Padding(22),
             ColumnCount = 1,
-            RowCount = 9
+            RowCount = 10
         };
 
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -80,6 +83,18 @@ internal sealed class MainForm : Form
         clientLabel.Margin = new Padding(0, 0, 0, 6);
         fileLabel.Margin = new Padding(0, 0, 0, 16);
 
+        var buttons = new FlowLayoutPanel
+        {
+            AutoSize = true,
+            Dock = DockStyle.Fill,
+            Margin = new Padding(0, 0, 0, 16)
+        };
+
+        openButton.Click += (_, _) => ChooseFile();
+        exampleButton.Click += (_, _) => TryLoad(Path.Combine(AppContext.BaseDirectory, "installation.example.json"), true);
+        buttons.Controls.Add(openButton);
+        buttons.Controls.Add(exampleButton);
+
         var connection = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, Margin = new Padding(0, 0, 0, 14) };
         connection.Controls.Add(new Label { Text = "Username", AutoSize = true, Padding = new Padding(0, 5, 0, 0) });
         connection.Controls.Add(usernameBox);
@@ -88,7 +103,6 @@ internal sealed class MainForm : Form
         connection.Controls.Add(queryButton);
         connection.Controls.Add(cancelButton);
         queryButton.Click += async (_, _) => await QueryCloudAsync();
-        AcceptButton = queryButton;
         cancelButton.Click += (_, _) => operationCancellation?.Cancel();
         downloadButton.Click += async (_, _) => await ChooseDownloadAsync();
         openDownloadFolder.LinkClicked += (_, _) => OpenDownloadFolder();
@@ -140,36 +154,37 @@ internal sealed class MainForm : Form
         layout.Controls.Add(heading, 0, 0);
         layout.Controls.Add(clientLabel, 0, 1);
         layout.Controls.Add(fileLabel, 0, 2);
-        layout.Controls.Add(connection, 0, 3);
-        layout.Controls.Add(tabs, 0, 4);
+        layout.Controls.Add(buttons, 0, 3);
+        layout.Controls.Add(connection, 0, 4);
+        layout.Controls.Add(tabs, 0, 5);
         var downloadActions = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, Margin = new Padding(0) };
         downloadActions.Controls.Add(downloadButton);
         downloadActions.Controls.Add(openDownloadFolder);
-        layout.Controls.Add(downloadActions, 0, 5);
-        layout.Controls.Add(downloadProgress, 0, 6);
-        layout.Controls.Add(statusLabel, 0, 7);
-        layout.Controls.Add(note, 0, 8);
+        layout.Controls.Add(downloadActions, 0, 6);
+        layout.Controls.Add(downloadProgress, 0, 7);
+        layout.Controls.Add(statusLabel, 0, 8);
+        layout.Controls.Add(note, 0, 9);
         Controls.Add(layout);
 
         if (initialFile is not null)
         {
             Shown += (_, _) => TryLoad(initialFile, false);
         }
-        else if (settingsPath is not null)
+    }
+
+    private void ChooseFile()
+    {
+        using var dialog = new OpenFileDialog
         {
-            try
-            {
-                if (FolderPreferences.Read(settingsPath) is { } saved)
-                {
-                    ApplyInstallation(InstallationFileReader.FromFolderNames(saved.ClientFolder, saved.InstalledFolder),
-                        "This computer's client configuration is loaded.", false);
-                    statusLabel.Text = "Enter your password and check for updates.";
-                }
-            }
-            catch (Exception error) when (error is IOException or InvalidDataException or UnauthorizedAccessException or System.Text.Json.JsonException)
-            {
-                statusLabel.Text = "Client configuration could not be loaded. Ask your administrator to configure this computer.";
-            }
+            Title = "Open local installation information",
+            Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*",
+            CheckFileExists = true,
+            Multiselect = false
+        };
+
+        if (dialog.ShowDialog(this) == DialogResult.OK)
+        {
+            TryLoad(dialog.FileName, false);
         }
     }
 
@@ -194,14 +209,9 @@ internal sealed class MainForm : Form
         }
         // Validate the whole file before replacing any displayed state.
         LocalInstallation loaded = InstallationFileReader.Read(path);
-        ApplyInstallation(loaded, "Installation file: " + Path.GetFullPath(path), example);
-    }
-
-    private void ApplyInstallation(LocalInstallation loaded, string source, bool example)
-    {
         installation = loaded;
         clientLabel.Text = "Client folder: " + loaded.ClientFolder;
-        fileLabel.Text = source;
+        fileLabel.Text = "Installation file: " + Path.GetFullPath(path);
         productsGrid.Rows.Clear();
         cloudGrid.Rows.Clear();
         comparisons = Array.Empty<ProductUpdate>();
@@ -227,32 +237,26 @@ internal sealed class MainForm : Form
 
     internal async Task QueryCloudAsync()
     {
-        if (operationCancellation is not null)
+        if (installation is null || operationCancellation is not null)
         {
-            return;
-        }
-        if (installation is null)
-        {
-            statusLabel.Text = "Client configuration is missing. Ask your administrator to configure this computer.";
             return;
         }
 
-        if (installation is not { } current) return;
         using var cancellation = new CancellationTokenSource();
         operationCancellation = cancellation;
         SetBusy(true);
         cloudGrid.Rows.Clear();
         ResetComparisons();
-        statusLabel.Text = "Loading cloud folder: " + current.ClientFolder + "...";
+        statusLabel.Text = "Loading cloud folder: " + installation.ClientFolder + "...";
 
         try
         {
             IReadOnlyList<RemoteEntry> entries = await api.ListAsync(
-                current.ClientFolder, usernameBox.Text, passwordBox.Text, cancellation.Token);
+                installation.ClientFolder, usernameBox.Text, passwordBox.Text, cancellation.Token);
             cancellation.Token.ThrowIfCancellationRequested();
             if (!IsDisposed)
             {
-                comparisons = UpdateComparison.Compare(current, entries);
+                comparisons = UpdateComparison.Compare(installation, entries);
                 DisplayComparisons();
                 foreach (RemoteEntry entry in entries)
                 {
@@ -320,7 +324,7 @@ internal sealed class MainForm : Form
 
     private void SetBusy(bool busy)
     {
-        usernameBox.Enabled = passwordBox.Enabled = !busy;
+        openButton.Enabled = exampleButton.Enabled = usernameBox.Enabled = passwordBox.Enabled = !busy;
         queryButton.Enabled = !busy && installation is not null;
         cancelButton.Enabled = busy;
         productsGrid.Enabled = !busy;

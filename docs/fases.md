@@ -36,11 +36,3 @@ The CLI does not read an installation JSON or require a real local directory. Th
 ## Portable Windows delivery
 
 The publishing script creates a Windows package containing self-contained desktop and console executables, the provisional desktop example, and end-user instructions. The first win-x64 ZIP was generated and extracted separately; all 24 CLI and 67 desktop checks passed using the published executables. No production requests were made. See [Windows distribution](distribution.md). Acceptance on representative customer hardware remains pending, as does the final desktop installation-file integration.
-
-## Desktop direct entry and remembered folders
-
-The desktop now accepts the same two folder names as the CLI directly in the window. After a successful check, it remembers only those names for the current Windows user; subsequent launches require only credentials and a check. No example or JSON import is needed. Optional file import remains available. Eleven new checks cover direct entry, settings persistence/restoration, no credential storage, stale-result clearing, invalid input, authentication failure, updated installed versions, and corrupt preferences. Together with existing checks, 78 desktop and 24 CLI checks pass. The Windows package is regenerated for this workflow.
-
-## Latest desktop workflow: no folder inputs
-
-The user's subsequent clarification supersedes the direct-entry UI above. The desktop now reads the already configured customer's settings automatically; the user only enters credentials and checks. Folder inputs and example/import buttons have been removed. An administrator provisions new Windows profiles once with the supplied configure_desktop.ps1. Existing settings remain compatible. Missing/invalid settings prevent requests and explain the setup requirement. Eleven revised configured-client checks replace the direct-entry checks; the desktop still has 78 checks in total.
