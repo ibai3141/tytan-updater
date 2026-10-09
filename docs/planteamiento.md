@@ -1,6 +1,8 @@
 # Scope and integration contract
 
-Updated: October 7, 2026.
+Updated: October 9, 2026.
+
+The retained Windows delivery is the first package, TytanUpdater-win-x64-20261009-094714-e05a10. Desktop input remains the provisional JSON/example; console input is exactly two names with a Save As destination dialog. The complete implementation and usage references are the [technical guide](technical-guide.md) and [user guide](user-guide.md). Installed-version detection and automatic installation remain pending.
 
 ## Confirmed deliverable
 

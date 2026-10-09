@@ -161,3 +161,11 @@ The retained Python harness tests the three actual PHP files independently of .N
 - Extracted the ZIP into a new isolated directory and invoked the published console help, all 24 CLI checks, and all 67 desktop checks successfully. DOTNET_ROOT/DOTNET_ROOT_X64 pointed to an absent runtime directory and multilevel lookup was disabled in the child-process environment. No source files were needed in that extracted directory.
 - These checks ran on the development computer using local fixtures, without production requests. They do not replace acceptance on a representative customer computer or validate ARM64 hardware. Only win-x64 was built and checked in this delivery.
 - The interface still uses provisional installation JSON, while the console accepts two folder names and prompts for a save location. Neither application installs Tytan update packages.
+
+### Retained-release documentation
+
+- At the user's request, commit 9001bc9 restored the first distribution's application source. The two later ZIPs were removed; the original ZIP was retained. The current documentation describes that retained version, not the reverted remembered-client or administrator-configuration variants.
+- Added the complete technical guide and end-user guide in Markdown and Word. The PHP walkthrough remains available and its Word copy was regenerated. The documentation index distinguishes current instructions, focused references, and historical verification records.
+- Checked that every C# and PHP excerpt in the complete technical guide matches the actual source text, ignoring whitespace. Validated local guide links, paired code fences, Word ZIP integrity, matching Word/Markdown heading sequences, code/table presence, and English metadata.
+- The exporter now generates all three Word guides with document-specific titles/headers, hyperlinks, repeating table headers, code styling, and page numbers.
+- The preserved ZIP's SHA256 remains 29A0E00943D989D0300CA11FE0AC78F8FB306BEB03E90B88733000A2A5F99D7E. No executable was republished, no application/server behavior changed, and no production request was made for this documentation work. Windows check counts in the guides (67 desktop plus 24 CLI) refer to the previously verified retained implementation; no new application-test run is claimed for this documentation-only change.

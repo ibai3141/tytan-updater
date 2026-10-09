@@ -40,8 +40,10 @@ Deploy the three PHP files to SQLupdate. Keep the hosting's working authenticati
 
 ## Documentation
 
-- [Technical documentation with source excerpts](docs/technical-walkthrough.md)
-- [Technical documentation in Word](docs/technical-walkthrough.docx)
+- [Documentation index and retained release scope](docs/README.md)
+- [Complete technical guide with source excerpts](docs/technical-guide.md) — [Word](docs/technical-guide.docx)
+- [Desktop and console user guide](docs/user-guide.md) — [Word](docs/user-guide.docx)
+- [Additional PHP technical walkthrough](docs/technical-walkthrough.md) — [Word](docs/technical-walkthrough.docx)
 - [Server deployment and configuration](docs/server.md)
 - [URL usage and acceptance checks](docs/uso.md)
 - [Scope and integration contract](docs/planteamiento.md)
@@ -72,7 +74,7 @@ python tests/server/test_endpoints.py --php C:/path/to/php.exe
 
 The harness creates temporary ZIP fixtures and local PHP servers, validates responses and downloads, then stops the servers. It never contacts production.
 
-## Regenerate the Word document
+## Regenerate the Word documents
 
 ```powershell
 python -m pip install -r scripts/requirements-docs.txt

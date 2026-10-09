@@ -2,6 +2,8 @@
 
 Updated: October 9, 2026. Commit messages are Spanish; documentation is English. The user handles pushing.
 
+Current baseline: source restored in 9001bc9 to the first distribution, 45122ab / TytanUpdater-win-x64-20261009-094714-e05a10. The desktop loads a JSON/example; the console accepts two names and opens Save As. Later remembered-client/configuration UI changes were reverted. The retained desktop has 67 checks and the CLI has 24, for 91 Windows checks. See the [technical guide](technical-guide.md) and [user guide](user-guide.md) for the final retained behavior; phase counts below describe historical checkpoints.
+
 | Phase | Work | Status |
 | --- | --- | --- |
 | 1. Initial client prototype | C# models, version comparison, HTTPS requests, downloads, CLI | Historical; removed from the current delivery at the user's request |

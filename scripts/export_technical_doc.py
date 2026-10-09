@@ -1,4 +1,4 @@
-"""Export the technical walkthrough to Word. Requires requirements-docs.txt."""
+"""Export the English technical and user guides to Word. Requires requirements-docs.txt."""
 
 from pathlib import Path
 import re
@@ -7,10 +7,28 @@ from docx import Document
 from docx.shared import Cm, Pt, RGBColor
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
+from docx.opc.constants import RELATIONSHIP_TYPE
 
 
 def inline(paragraph, text):
-    for part in re.split(r"(`[^`]+`|\*\*[^*]+\*\*)", text):
+    for part in re.split(r"(`[^`]+`|\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\))", text):
+        link = re.fullmatch(r"\[([^\]]+)\]\(([^)]+)\)", part)
+        if link:
+            relation = paragraph.part.relate_to(link[2], RELATIONSHIP_TYPE.HYPERLINK, is_external=True)
+            hyperlink = OxmlElement('w:hyperlink')
+            hyperlink.set(qn('r:id'), relation)
+            run_element = OxmlElement('w:r')
+            properties = OxmlElement('w:rPr')
+            style = OxmlElement('w:rStyle')
+            style.set(qn('w:val'), 'Hyperlink')
+            properties.append(style)
+            run_element.append(properties)
+            label = OxmlElement('w:t')
+            label.text = link[1]
+            run_element.append(label)
+            hyperlink.append(run_element)
+            paragraph._p.append(hyperlink)
+            continue
         run = paragraph.add_run(part.strip('`') if part.startswith('`') else
                                 part[2:-2] if part.startswith('**') else part)
         if part.startswith('`'):
@@ -21,6 +39,8 @@ def inline(paragraph, text):
 
 
 def export(source, destination):
+    lines = source.read_text(encoding='utf-8-sig').splitlines()
+    title = next((line[2:] for line in lines if line.startswith('# ')), source.stem)
     document = Document()
     section = document.sections[0]
     section.page_width, section.page_height = Cm(21), Cm(29.7)
@@ -36,14 +56,13 @@ def export(source, destination):
     code_style.paragraph_format.line_spacing = 1
     for name in ['Title', 'Heading 1', 'Heading 2', 'Heading 3']:
         document.styles[name].font.color.rgb = RGBColor.from_string('17365D')
-    document.core_properties.title = 'Tytan Updater - PHP Server Technical Documentation'
-    document.core_properties.subject = 'Architecture, implementation, code excerpts, and integration'
+    document.core_properties.title = title
+    document.core_properties.subject = 'Tytan Updater: retained first Windows distribution and PHP server'
     document.core_properties.language = 'en-US'
     language = OxmlElement('w:lang')
     language.set(qn('w:val'), 'en-US')
     normal.element.get_or_add_rPr().append(language)
 
-    lines = source.read_text(encoding='utf-8').splitlines()
     i = 0
     while i < len(lines):
         line = lines[i]
@@ -72,6 +91,9 @@ def export(source, destination):
                     if number == 0:
                         for run in cell.paragraphs[0].runs:
                             run.bold = True
+                if number == 0:
+                    repeating_header = OxmlElement('w:tblHeader')
+                    cells[0]._tc.getparent().get_or_add_trPr().append(repeating_header)
             document.add_paragraph()
             continue
         elif line.startswith('# '):
@@ -89,7 +111,7 @@ def export(source, destination):
         i += 1
 
     header = section.header.paragraphs[0]
-    header.text = 'TYTAN UPDATER | PHP SERVER TECHNICAL DOCUMENTATION'
+    header.text = title.upper()
     header.runs[0].font.size = Pt(8)
     footer = section.footer.paragraphs[0]
     footer.alignment = 2
@@ -102,7 +124,8 @@ def export(source, destination):
 
 if __name__ == '__main__':
     root = Path(__file__).resolve().parents[1]
-    source = root / 'docs' / 'technical-walkthrough.md'
-    destination = source.with_suffix('.docx')
-    export(source, destination)
-    print(f'Exported {destination.name}')
+    for name in ('technical-guide', 'user-guide', 'technical-walkthrough'):
+        source = root / 'docs' / (name + '.md')
+        destination = source.with_suffix('.docx')
+        export(source, destination)
+        print(f'Exported {destination.name}')
