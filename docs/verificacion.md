@@ -123,3 +123,11 @@ The retained Python harness tests the three actual PHP files independently of .N
 - Release build passed with zero errors/warnings. All 67 checks passed, including new checks for progress before/after publication and the completed window's saved path and installation explanation.
 - A fresh real Faktury download through the desktop code passed size/readability checks and completed in the window. The application-only screenshot was inspected. The verification package was saved in its owned temporary test directory and removed afterward; normal user downloads remain at the selected destination.
 - Automatic installation remains unimplemented pending the installer contract. No installed-version file or server configuration was changed.
+
+## October 9, 2026: console application
+
+- Added a separate console executable with two positional arguments: cloud customer folder and local version folder. The second provisionally contains installation.json; its agreed format is still pending confirmation.
+- Reused the desktop HTTP, comparison, and ZIP download sources without changing them. No window is opened by the CLI.
+- All 12 local CLI checks passed: equal/older/newer versions, authenticated request paths and ZIP bytes, unchanged installed metadata, existing destination preservation, customer mismatch before HTTP, missing package handling, authentication failure, missing password, invalid ZIP cleanup, cancellation, usage, and help.
+- The compiled console executable's --help output was checked directly in PowerShell. The existing desktop Release build passed with zero warnings and errors.
+- These new checks use local temporary fixtures and an injected HTTP handler. No new production download was performed for this change. Earlier real production download evidence remains recorded above.

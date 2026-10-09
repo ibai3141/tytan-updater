@@ -1,6 +1,6 @@
 # Implementation phases and delivery status
 
-Updated: October 7, 2026. Commit messages are Spanish; documentation is English. The user handles pushing.
+Updated: October 9, 2026. Commit messages are Spanish; documentation is English. The user handles pushing.
 
 | Phase | Work | Status |
 | --- | --- | --- |
@@ -26,3 +26,9 @@ The latest agreed flow uses the same BasicAuth account for all clients and reads
 | Desktop 5 | Adapt the final local file and confirm installation responsibilities with Tytan | Pending external contract |
 
 Each desktop phase is delivered for review before moving to the next. Commits remain Spanish and the user handles pushing.
+
+## Additional console delivery
+
+On October 9, a separate console executable was added at `cli/Tytan.Updater.Cli`. It accepts the cloud client folder followed by a local version folder, compares versions, downloads newer ZIPs, and reports when there are no updates. It shares the desktop comparison/download implementation and does not install packages. Twelve CLI checks passed and the existing desktop project still builds without warnings or errors.
+
+The second folder provisionally contains `installation.json` in the existing example format. Its definitive meaning/format remains pending user confirmation. See [CLI instructions](cli.md) for credentials, arguments, output paths, exit codes, and distribution.

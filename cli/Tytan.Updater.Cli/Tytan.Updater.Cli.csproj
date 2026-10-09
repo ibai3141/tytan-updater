@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Share the tested HTTP, comparison and download code with the window. -->
+    <Compile Include="../../desktop/Tytan.Updater.Desktop/InstallationFileReader.cs" Link="Shared/InstallationFileReader.cs" />
+    <Compile Include="../../desktop/Tytan.Updater.Desktop/UpdateComparison.cs" Link="Shared/UpdateComparison.cs" />
+    <Compile Include="../../desktop/Tytan.Updater.Desktop/CloudApiClient.cs" Link="Shared/CloudApiClient.cs" />
+    <Compile Include="../../desktop/Tytan.Updater.Desktop/PackageDownload.cs" Link="Shared/PackageDownload.cs" />
+  </ItemGroup>
+</Project>

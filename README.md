@@ -14,6 +14,16 @@ dotnet run --project desktop/Tytan.Updater.Desktop --configuration Release
 
 See [Desktop workflow, run instructions, and next phases](docs/desktop.md). All clients will use the shared hosting account, as requested; selecting a client folder is not an authorization boundary. The definitive installation-file format remains pending from the other developer.
 
+## Command-line application
+
+The separate console executable accepts the cloud client folder as its first parameter and a local version folder as its second. Provisionally, that local folder must contain `installation.json` in the existing example format. It downloads only newer ZIPs and prints `No updates available.` when all matching server versions are equal or older. It does not install updates.
+
+```powershell
+dotnet run --project cli/Tytan.Updater.Cli --configuration Release -- Barcin_Wodbar "C:/path/to/local-version-folder"
+```
+
+Set the server credentials in the process environment first. See [CLI setup, arguments, credentials, output, and checks](docs/cli.md). The definitive meaning/format of the second folder is pending confirmation.
+
 ## Delivered files
 
 | File | Purpose |
@@ -36,6 +46,7 @@ Deploy the three PHP files to SQLupdate. Keep the hosting's working authenticati
 - [Implementation phases](docs/fases.md)
 - [Results and verification history](docs/verificacion.md)
 - [Local Windows application](docs/desktop.md)
+- [Command-line updater](docs/cli.md)
 - [Installation integration contract and pending inputs](docs/installation-contract.md)
 
 ## Production URLs
