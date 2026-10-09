@@ -7,19 +7,28 @@ Use the build matching your Windows architecture (win-x64 or win-arm64).
 DESKTOP INTERFACE
 
 Double-click Tytan.Updater.Desktop.exe.
-First use: enter Client folder and Installed folder, for example:
-Client folder: Barcin_Wodbar
-Installed folder: Faktury_008.000.042
-Use the customer's actual folder names and installed version.
-Enter the server username and password supplied by your administrator.
-Click Check for updates (or press Enter). After a successful check, the two folder names
-are remembered for your Windows user. Next time, just enter the password and check.
+The program loads the customer configured for this Windows user automatically.
+Enter the server password and click Check for updates (or press Enter).
+The username already defaults to TytanSQL.
 Select an available update and click Download selected update.
 Choose where to save the ZIP. Open download folder locates a completed download.
-No example or installation JSON needs to be loaded. Optional JSON import remains available.
-Only folder names are saved in %LOCALAPPDATA%\TytanUpdater\folders.json, never credentials.
-When the actual installed version changes, edit Installed folder accordingly.
+There are no folder-name fields or example/import buttons in the window.
+If configuration is missing or invalid, contact the administrator.
+The administrator maintains %LOCALAPPDATA%\TytanUpdater\folders.json, never credentials.
 The included installation.example.json is demonstration/test data, not detected installed versions.
+
+ADMINISTRATOR SETUP (ONCE PER WINDOWS USER)
+
+Existing valid folders.json settings from the previous desktop version are reused.
+For a new user, run the included setup script as that Windows user with the real
+customer folder and installed product/version name. These values are examples:
+
+powershell -NoProfile -ExecutionPolicy Bypass -File .\configure_desktop.ps1 -ClientFolder Barcin_Wodbar -InstalledFolder Faktury_008.000.042
+
+Restart the desktop application after configuring it. Update this configuration
+when the actual installed version changes; downloading does not change the version.
+The setup script stores no credentials. It is an administrator provisioning step,
+not an extra end-user step on each launch.
 
 COMMAND LINE
 

@@ -22,8 +22,8 @@ internal static class Program
             }
             int cloud = CloudChecks.Run();
             if (cloud != 0) return cloud;
-            int manual = ManualInputChecks.Run();
-            return manual == 0 ? DownloadChecks.Run() : manual;
+            int configured = ConfiguredClientChecks.Run();
+            return configured == 0 ? DownloadChecks.Run() : configured;
         }
 
         if (args.Length == 1 && args[0] == "--verify-live")

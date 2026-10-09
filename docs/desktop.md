@@ -4,13 +4,23 @@ Updated: October 9, 2026.
 
 For customer delivery, see [Windows distribution](distribution.md). The publishing script creates a portable ZIP with self-contained desktop and console executables; customers do not need this repository or a separate .NET runtime installation.
 
-## Current workflow: direct folder names and remembered configuration
+## Current workflow: configured client, password, and check
 
-On first launch, enter Client folder (the customer's cloud directory) and Installed folder (the product/version name, such as Faktury_008.000.042), then the server password. Click Check for updates or press Enter. No example or installation JSON needs to be loaded. The username defaults to TytanSQL. After successful listing/comparison, only the two folder names are saved to %LOCALAPPDATA%\TytanUpdater\folders.json. No credentials are saved. On subsequent launches those names are restored, so the user only enters the password and checks again.
+The desktop reads %LOCALAPPDATA%\TytanUpdater\folders.json automatically on startup and loads only that configured customer's product/version. The username defaults to TytanSQL. The user enters the password and clicks Check for updates or presses Enter. The window has no client-folder/installed-folder inputs, example buttons, or import buttons. Valid settings from the previous version remain compatible. The desktop does not rewrite these settings or store credentials.
 
-The installed version is taken from the entered folder name, not detected from this computer. Edit that name when the actual installed version changes; downloading a ZIP does not update it. Editing either folder clears old results and download selection. Invalid names stop before HTTP. Rejected credentials do not replace remembered settings. Missing/corrupt saved settings recover to empty inputs and an explanatory message, without silently using example versions. Failure to save settings does not invalidate a successful comparison and is reported in the status.
+If the settings are missing, corrupt, or contain an invalid customer/version, the window explains that the administrator must configure the computer. It does not query the root directory or silently load examples. Rejected credentials clear stale results and download selection. The shared password authenticates access; the local configuration identifies the customer and installed version.
 
-Import installation file (optional) preserves the provisional JSON workflow for multiple products. It is no longer required for normal single-product use and imported example files are not remembered as a customer's direct configuration. The definitive installation-file integration remains pending. The historical phases below describe how the application was built; the direct-entry workflow supersedes their requirement to load a file first.
+The installed version comes from configuration, not automatic detection. An administrator must update it when the actual installation changes; downloading a ZIP does not update it. Final installed-version-file integration remains pending. An explicit installation JSON command-line argument remains supported for integration/testing, but there is no import UI. Historical phases below describe previous workflows; this configured-client workflow supersedes their requirement to load a file or enter folder names.
+
+## Administrator provisioning
+
+Run the included setup script once under the customer's Windows account, with that customer's real cloud folder and installed product/version name:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ./configure_desktop.ps1 -ClientFolder Barcin_Wodbar -InstalledFolder Faktury_008.000.042
+```
+
+In the source repository the script is under scripts/configure_desktop.ps1. It validates names, writes only ClientFolder and InstalledFolder to the current user's LocalAppData settings, and replaces existing settings atomically. It never requests or stores passwords. Restart the application after provisioning or changing versions. Do not run this as a different Windows user, since that would configure that other user's profile. The example command's version is illustrative; use the actual installed version.
 
 ## Agreed workflow
 
@@ -35,7 +45,7 @@ Phase 1 originally made no API calls. Phase 2 now adds the cloud listing describ
 
 ## Phase 2: HTTPS cloud-folder listing
 
-Enter the two folder names (restored automatically after the first successful check), or optionally import an installation file. Enter the shared username and password, then click Check for updates. The request is:
+The configured folder is loaded automatically. Enter the shared password, then click Check for updates. The request is:
 
 ```text
 https://tytan.poznan.pl/SQLupdate/api.php?dir=<loaded-clientFolder>

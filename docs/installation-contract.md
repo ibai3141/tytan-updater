@@ -4,6 +4,8 @@ Updated: October 7, 2026.
 
 The desktop application already reads provisional local data, queries the customer's cloud folder, compares package versions, and downloads validated ZIPs. This document records the information needed to adapt it to the real installation source and connect Tytan's installation mechanism. It does not define an installer or claim automatic installation is implemented.
 
+The current desktop loads administrator-provisioned per-user folder settings automatically, with no folder-name inputs in the window. This identifies the customer and supplies a recorded product/version while the definitive installation-file integration remains pending. See [desktop configuration](desktop.md). The shared password itself does not identify a customer or installed version.
+
 Review of F:\SQL_Update found only the original project/integration documents. They explain HTTPS listing and local ZIP saving but do not supply the definitive installed-version file or installation command. The provisional examples/installation.example.json remains example data.
 
 ## Information to provide
