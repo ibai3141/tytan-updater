@@ -40,7 +40,6 @@ The supported keys are exactly `TYTAN_API_BASE_URL`, `TYTAN_API_USERNAME`, and `
 
 Only the credential-free `.env.example` belongs in Git and distributable ZIPs. Private `.env` and `.env.*` files are ignored, and the publisher never copies them. A password entered into `.env` is plain text; the program reads it but never writes or edits this file.
 
-
 Both Windows applications read `TYTAN_API_BASE_URL` at startup. If it is unset, they use `https://tytan.poznan.pl/SQLupdate/`. To change the server without rebuilding:
 
 ```powershell
