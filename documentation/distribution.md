@@ -13,7 +13,7 @@ Use these builds to load the optional executable-side `.env`. The ZIP contains o
 
 These builds include 16 shared configuration checks in addition to the existing 109 Windows checks (125 distinct checks). Both applications run the shared configuration suite in self-test mode. Startup integration checks also launch the published CLI from a different working directory, verify environment precedence, and verify malformed-file errors without exposing values or contacting the server. The x86 verification uses WOW64; acceptance on a customer computer running actual 32-bit Windows remains pending.
 
-Only the two current ZIPs and their extracted directories remain under ignored `dist/`. Superseded release ZIPs/folders, intermediate publishing files, temporary check logs, and project `bin`/`obj` directories were removed during cleanup. Source, documentation, tests, templates, and current customer configuration remain. Building again recreates intermediate directories as needed. Git tracks source and documentation, not delivery ZIPs.
+Packages are generated locally under ignored `dist/`. Git tracks source and documentation, not delivery ZIPs.
 
 ## Build a delivery
 

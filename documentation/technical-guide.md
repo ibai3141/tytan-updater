@@ -2,7 +2,7 @@
 
 Updated: October 12, 2026. Language: English.
 
-This guide describes the current source, including the October 12 configurable API URL and optional CLI destination parameter. The current packages also include optional executable-side `.env` configuration; obsolete local release artifacts have been removed. Historical release checks below are labelled separately.
+This guide describes the current source, including the October 12 configurable API URL and optional CLI destination parameter. The current packages also include optional executable-side `.env` configuration. Historical release checks below are labelled separately.
 
 ## Scope and implemented behavior
 
@@ -539,7 +539,7 @@ To publish the 32-bit desktop and CLI with the x86 runtime:
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/publish_windows.ps1 -Runtime win-x86
 ```
 
-Only the current win-x64 and win-x86 delivery ZIPs and their extracted directories are retained locally. Older releases and generated build/check artifacts have been removed. Current package filenames and SHA256 hashes are listed in [Windows distribution](distribution.md).
+Current package filenames and SHA256 hashes are listed in [Windows distribution](distribution.md).
 
 ## Integration boundaries and future changes
 

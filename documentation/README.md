@@ -2,7 +2,7 @@
 
 Updated: October 12, 2026. All guides are in English.
 
-The current delivery consists of the October 12 `.env` packages: TytanUpdater-win-x64-20261012-093409-401bd4 and TytanUpdater-win-x86-20261012-093353-e5e374. The desktop loads an installation JSON or the example. The console accepts two required folder names and an optional destination directory; omitting the destination opens Save As for newer packages. Older local release ZIPs and extracted folders have been removed.
+The current delivery consists of the October 12 `.env` packages: TytanUpdater-win-x64-20261012-093409-401bd4 and TytanUpdater-win-x86-20261012-093353-e5e374. The desktop loads an installation JSON or the example. The console accepts two required folder names and an optional destination directory; omitting the destination opens Save As for newer packages.
 
 A separate win-x86 package provides the same application workflow for 32-bit Windows, including the matching runtime. See [distribution instructions](distribution.md) to choose or publish the correct architecture.
 
