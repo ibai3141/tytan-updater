@@ -16,19 +16,43 @@ See [Desktop workflow and run instructions](documentation/desktop.md). All clien
 
 ## Command-line application
 
-The Windows console executable accepts exactly two folder names: the cloud client folder and the installed product folder, such as `Faktury_008.000.042`. It extracts the product/version without reading a JSON file. If a newer ZIP is found, it opens Save As to choose where to save it. Otherwise, it prints `No updates available.` without opening a dialog. Cancelling Save As stops the download. It does not install updates.
+The Windows console executable accepts two required folder names and an optional destination directory: the cloud client folder and the installed product folder, such as `Faktury_008.000.042`. It extracts the product/version without reading a JSON file. If a newer ZIP is found, it saves it in the optional destination directory, or opens Save As when that argument is omitted. Otherwise, it prints `No updates available.` without opening a dialog. Cancelling Save As stops the download. It does not install updates.
 
 ```powershell
 dotnet run --project cli/Tytan.Updater.Cli --configuration Release -- Barcin_Wodbar Faktury_008.000.042
 ```
 
-Set the server credentials in the process environment first. See [CLI setup, arguments, credentials, output, and checks](documentation/cli.md).
+Set the server credentials in the process environment first. The configurable URL and destination parameter require a newly built executable; the preserved October 9 ZIPs retain their original behavior. See [CLI setup, arguments, credentials, output, and checks](documentation/cli.md).
+
+## Server configuration
+
+Both Windows applications read `TYTAN_API_BASE_URL` at startup. If it is unset, they use `https://tytan.poznan.pl/SQLupdate/`. To change the server without rebuilding:
+
+```powershell
+$env:TYTAN_API_BASE_URL = 'https://updates.example.com/SQLupdate/'
+```
+
+Use the HTTPS directory containing both `api.php` and `download.php`, with a trailing slash. Do not enter the full `api.php` URL. HTTP, embedded credentials, query strings, fragments, and invalid URLs are rejected. Restart the application after changing its environment. To restore the default, run `Remove-Item Env:TYTAN_API_BASE_URL` in the same terminal before starting it again. These commands configure only that terminal and applications launched from it.
+
+Credentials are configured separately. Set `TYTAN_API_USERNAME` and `TYTAN_API_PASSWORD` for the console; the desktop also allows entering them in its fields. The administrator changes the actual account on the hosting server. Changing credentials does not require rebuilding. The new server must expose the same endpoint names, JSON contract, and BasicAuth behavior; a URL change alone cannot adapt a different API.
+
+### Download without a dialog
+
+The optional third argument is an existing local destination directory, not a ZIP filename:
+
+```powershell
+.\Tytan.Updater.Cli.exe Barcin_Wodbar Faktury_008.000.042 "C:\Tytan\Updates"
+```
+
+Create the directory first and ensure the account can write to it. Use quotes around paths containing spaces. Relative paths resolve against the terminal's current working directory. A newer package is saved directly as `<destination-folder>/<server-package-name>.zip`, without a customer subfolder or Save As dialog. An empty, missing, or file-valued destination is rejected before contacting the server. Existing ZIPs are preserved. If no newer version exists, the command prints `No updates available.` and downloads nothing.
+
+Omit the third argument to keep the existing Save As workflow. Both modes download and validate ZIPs; neither installs them.
 
 ## Delivered files
 
 For customer computers, build a portable Windows ZIP with `./scripts/publish_windows.ps1`. It includes self-contained desktop and console executables, the desktop example file, and end-user instructions; customers do not need the source repository or a separate .NET installation. See [Windows distribution](documentation/distribution.md).
 
-For 32-bit Windows, publish with `-Runtime win-x86`; this bundles x86 executables and their 32-bit runtime. The default win-x64 package is for 64-bit Intel/AMD Windows. Both packages retain the same desktop and two-argument CLI workflow.
+For 32-bit Windows, publish with `-Runtime win-x86`; this bundles x86 executables and their 32-bit runtime. The default win-x64 package is for 64-bit Intel/AMD Windows. Both architectures support the desktop and the CLI with two required arguments plus an optional destination directory.
 
 | File | Purpose |
 | --- | --- |

@@ -1,8 +1,8 @@
 # Tytan Updater — Technical guide
 
-Updated: October 9, 2026. Language: English.
+Updated: October 12, 2026. Language: English.
 
-This guide describes the retained first Windows distribution, TytanUpdater-win-x64-20261009-094714-e05a10, and the source restored by commit 9001bc9. Its application behavior matches the initial distribution commit 45122ab. Documentation changes do not change the executables or the retained ZIP.
+This guide describes the current source, including the October 12 configurable API URL and optional CLI destination parameter. Preserved October 9 ZIPs retain their original behavior and require replacement with a new build to use these additions. Historical release checks below are labelled separately.
 
 ## Scope and implemented behavior
 
@@ -168,13 +168,13 @@ If loading a replacement file fails, the previous valid installation remains dis
 
 ## Console input and execution
 
-The CLI uses exactly two positional arguments:
+The CLI uses two required positional arguments and an optional destination directory:
 
 ```powershell
 .\Tytan.Updater.Cli.exe Barcin_Wodbar Faktury_008.000.042
 ```
 
-The first is one cloud client folder name. The second is a name, not a path: the last underscore separates the product from the installed version. No JSON or actual folder with this name is needed. No third destination argument is supported.
+The first is one cloud client folder name. The second is a name, not a path: the last underscore separates the product from the installed version. No JSON or actual folder with this name is needed. The optional third argument is validated as an existing directory before HTTP; its absolute path is combined with the validated server ZIP name. It bypasses the destination chooser and never overwrites existing files.
 
 Command.RunAsync validates the inputs and creates the same local model that the desktop reader produces:
 
@@ -185,10 +185,10 @@ var installation = new LocalInstallation(args[0], new[] { product });
 
 Using the last underscore supports names such as Product_With_Underscores_008.000.042. A full filesystem path, a ZIP extension, a missing product prefix, or a malformed version is rejected before HTTP.
 
-Program reads TYTAN_API_USERNAME (default TytanSQL) and TYTAN_API_PASSWORD (required). It installs a Console.CancelKeyPress handler that cancels the shared token. RunAsync lists, compares, writes the comparison line, and opens Save As only for a newer package. If the server version is equal or older it writes No updates available. A missing matching package is an error, not an up-to-date result.
+Program reads TYTAN_API_USERNAME (default TytanSQL) and TYTAN_API_PASSWORD (required). It installs a Console.CancelKeyPress handler that cancels the shared token. RunAsync lists, compares, writes the comparison line, and opens Save As only for a newer package when no destination parameter is supplied. If the server version is equal or older it writes No updates available. A missing matching package is an error, not an up-to-date result.
 
 ```csharp
-string? destination = await (chooseDestination ?? DownloadLocation.ChooseAsync)(update.Package.Name, token);
+destination = await (chooseDestination ?? DownloadLocation.ChooseAsync)(update.Package.Name, token);
 token.ThrowIfCancellationRequested();
 if (destination is null)
 {
@@ -197,7 +197,7 @@ if (destination is null)
 }
 ```
 
-The chooser is injectable for local tests. The production implementation creates SaveFileDialog on a dedicated background STA thread, because async console continuations run on thread-pool threads. TaskCompletionSource returns the selected full path; WaitAsync(token) allows Ctrl+C to end the wait. The background thread does not keep the CLI process alive when Main finishes. An interactive Windows session is required.
+The chooser is injectable for local tests. The production implementation creates SaveFileDialog on a dedicated background STA thread, because async console continuations run on thread-pool threads. TaskCompletionSource returns the selected full path; WaitAsync(token) allows Ctrl+C to end the wait. The background thread does not keep the CLI process alive when Main finishes. An interactive Windows session is required for the chooser; the third-argument download mode does not open a dialog.
 
 TerminalProgress reports stage changes and roughly ten-percentage-point increments synchronously, avoiding delayed progress callbacks after console completion.
 
@@ -209,6 +209,35 @@ TerminalProgress reports stage changes and roughly ten-percentage-point incremen
 | 130 | Ctrl+C cancellation or cancellation of Save As |
 
 --help/-h prints help without credentials or a request. --self-test runs local checks. Double-clicking the console EXE without arguments prints usage then exits; run it from PowerShell to see the output and provide parameters.
+
+## Server configuration
+
+Both Windows applications read `TYTAN_API_BASE_URL` at startup. If it is unset, they use `https://tytan.poznan.pl/SQLupdate/`. To change the server without rebuilding:
+
+```powershell
+$env:TYTAN_API_BASE_URL = 'https://updates.example.com/SQLupdate/'
+```
+
+Use the HTTPS directory containing both `api.php` and `download.php`, with a trailing slash. Do not enter the full `api.php` URL. HTTP, embedded credentials, query strings, fragments, and invalid URLs are rejected. Restart the application after changing its environment. To restore the default, run `Remove-Item Env:TYTAN_API_BASE_URL` in the same terminal before starting it again. These commands configure only that terminal and applications launched from it.
+
+Credentials are configured separately. Set `TYTAN_API_USERNAME` and `TYTAN_API_PASSWORD` for the console; the desktop also allows entering them in its fields. The administrator changes the actual account on the hosting server. Changing credentials does not require rebuilding. The new server must expose the same endpoint names, JSON contract, and BasicAuth behavior; a URL change alone cannot adapt a different API.
+
+`CloudApiClient.ResolveBaseUri` parses the environment setting or uses `DefaultBaseUrl`. The constructor gives an explicitly injected URI precedence over the environment, preserving test/integration injection. Invalid configuration produces an English console error with exit code 1, or a desktop error dialog. HTTPS remains mandatory; the PHP server is unchanged.
+
+```csharp
+internal static Uri ResolveBaseUri(string? configuredUrl)
+    {
+        string value = configuredUrl ?? DefaultBaseUrl;
+        if (!Uri.TryCreate(value, UriKind.Absolute, out Uri? uri) || uri.Scheme != "https" ||
+            uri.UserInfo != "" || uri.Query != "" || uri.Fragment != "" ||
+            !uri.AbsolutePath.EndsWith('/'))
+        {
+            throw new ArgumentException("TYTAN_API_BASE_URL must be an HTTPS directory URL ending with '/', without credentials, a query or a fragment (not api.php).");
+        }
+        return uri;
+    }
+
+```
 
 ## HTTPS listing and JSON contract
 
@@ -435,14 +464,16 @@ dotnet run --project cli/Tytan.Updater.Cli --configuration Release -- --self-tes
 python tests/server/test_endpoints.py --php C:/path/to/php.exe
 ```
 
-| Check suite | Count in retained Windows version | Coverage |
+| Check suite | Count in current source | Coverage |
 | --- | --- | --- |
 | DesktopChecks | 10 | Reader validation, rendered local data, preserving valid state after invalid replacement |
 | ComparisonChecks | 12 | Numeric precedence, product/path isolation, malformed names, equal/newer/missing results |
 | CloudChecks | 22 | HTTP/auth/query metadata, redirects, errors, cancellation, timeout, sorting, empty folders |
 | DownloadChecks | 23 | ZIP bytes/progress, size/HTTP/ZIP failures, cancellation, existing-file races, UI completion |
-| CommandChecks | 24 | Two-name input, authenticated query/download, selected path, chooser cancellation, errors, help |
-| Total Windows checks | 91 | Local simulated responses/fixtures; no production requests |
+| CommandChecks | 42 | Two/three-argument input, direct destination validation, custom URLs/environment settings, authenticated transfers, cancellation, errors, help |
+| Total Windows checks | 109 | Local simulated responses/fixtures; no production requests |
+
+On October 12, both newly published win-x86 and win-x64 packages passed these 109 checks per architecture. The x86 run used WOW64 on the development computer. No live server request was made. Package filenames and hashes are recorded in [Windows distribution](distribution.md).
 
 The PHP harness independently launches actual temporary PHP servers, creates owned ZIP fixtures, exercises endpoints/configuration failures, and cleans up. A server-only test run needs Python and PHP, not .NET.
 

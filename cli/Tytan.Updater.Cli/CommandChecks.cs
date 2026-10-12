@@ -29,7 +29,7 @@ internal static class CommandChecks
                 string version = "008.000.043", bool empty = false, bool unauthorized = false,
                 bool invalidZip = false, string password = "test-password", CancellationToken token = default,
                 string? outputRoot = null, string product = "Faktury", bool cancelDialog = false,
-                bool cancelAfterChoice = false)
+                bool cancelAfterChoice = false, string? baseUrl = null)
             {
                 int requests = 0;
                 int dialogs = 0;
@@ -39,6 +39,10 @@ internal static class CommandChecks
                 using var http = new HttpClient(new Handler(request =>
                 {
                     requests++;
+                    var expectedBase = new Uri(baseUrl ?? CloudApiClient.DefaultBaseUrl);
+                    if (request.RequestUri!.Host != expectedBase.Host ||
+                        !request.RequestUri.AbsolutePath.StartsWith(expectedBase.AbsolutePath, StringComparison.Ordinal))
+                        throw new InvalidDataException("Unexpected API base URL.");
                     if (request.Headers.Authorization?.Scheme != "Basic" ||
                         request.Headers.Authorization.Parameter != Convert.ToBase64String(Encoding.UTF8.GetBytes("test-user:test-password")))
                     {
@@ -60,7 +64,7 @@ internal static class CommandChecks
                     content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
                     return new HttpResponseMessage(HttpStatusCode.OK) { Content = content };
                 }));
-                using var api = new CloudApiClient(http: http);
+                using var api = new CloudApiClient(baseUri: new Uri(baseUrl ?? CloudApiClient.DefaultBaseUrl), http: http);
                 using var output = new StringWriter();
                 using var error = new StringWriter();
                 int code = await Command.RunAsync(args, api, output, error,
@@ -119,9 +123,83 @@ internal static class CommandChecks
             Check(result.Code == 130 && result.Requests == 1 && result.Dialogs == 1,
                 "cancellation after choosing a destination prevents the ZIP request");
 
-            result = await Run([standard[0], standard[1], chosenFolder]);
-            Check(result.Code == 2 && result.Requests == 0 && result.Dialogs == 0,
-                "third positional argument is rejected");
+            string argumentFolder = Path.Combine(root, "argument downloads");
+            Directory.CreateDirectory(argumentFolder);
+            string[] withDestination = [standard[0], standard[1], argumentFolder];
+            result = await Run(withDestination, baseUrl: "https://updates.example.test/new-location/");
+            string argumentTarget = Path.Combine(argumentFolder, "Faktury_008.000.043.zip");
+            Check(result.Code == 0 && result.Requests == 2 && result.Dialogs == 0 &&
+                File.ReadAllBytes(argumentTarget).SequenceEqual(bytes) && result.Out.Contains(argumentTarget),
+                "destination parameter downloads without a dialog using custom API and download URLs");
+
+            result = await Run(withDestination);
+            Check(result.Code == 1 && result.Requests == 1 && result.Dialogs == 0 &&
+                File.ReadAllBytes(argumentTarget).SequenceEqual(bytes), "destination parameter preserves existing ZIPs");
+
+            result = await Run(withDestination, version: "008.000.042");
+            Check(result.Code == 0 && result.Requests == 1 && result.Dialogs == 0 && result.Out.Contains("No updates available."),
+                "destination parameter does not download an equal version");
+
+            foreach (string invalidDestination in new[] { "", Path.Combine(root, "does-not-exist"), argumentTarget })
+            {
+                result = await Run([standard[0], standard[1], invalidDestination]);
+                Check(result.Code == 1 && result.Requests == 0 && result.Dialogs == 0,
+                    "invalid destination directory is rejected before HTTP: " + invalidDestination);
+            }
+
+            string invalidArgumentFolder = Path.Combine(root, "invalid argument ZIP");
+            Directory.CreateDirectory(invalidArgumentFolder);
+            result = await Run([standard[0], standard[1], invalidArgumentFolder], invalidZip: true);
+            Check(result.Code == 1 && result.Dialogs == 0 && !Directory.EnumerateFiles(invalidArgumentFolder).Any(),
+                "invalid ZIP with destination parameter leaves no final or partial file");
+
+            string previousDirectory = Directory.GetCurrentDirectory();
+            try
+            {
+                Directory.SetCurrentDirectory(root);
+                Directory.CreateDirectory("relative downloads");
+                result = await Run([standard[0], standard[1], "relative downloads"]);
+                Check(result.Code == 0 && result.Dialogs == 0 &&
+                    File.Exists(Path.Combine(root, "relative downloads", "Faktury_008.000.043.zip")),
+                    "relative destination directory resolves against the working directory");
+            }
+            finally
+            {
+                Directory.SetCurrentDirectory(previousDirectory);
+            }
+
+            Check(CloudApiClient.ResolveBaseUri(null).AbsoluteUri == CloudApiClient.DefaultBaseUrl,
+                "unset API base URL retains the default server");
+            foreach (string invalidUrl in new[] { "", "http://example.test/", "ftp://example.test/", "relative/",
+                "https://example.test/api.php", "https://user:pass@example.test/", "https://example.test/?x=1", "https://example.test/#fragment" })
+            {
+                bool rejected = false;
+                try { CloudApiClient.ResolveBaseUri(invalidUrl); }
+                catch (ArgumentException) { rejected = true; }
+                Check(rejected, "invalid API base URL is rejected: " + invalidUrl);
+            }
+
+            string? originalUrl = Environment.GetEnvironmentVariable("TYTAN_API_BASE_URL");
+            try
+            {
+                Environment.SetEnvironmentVariable("TYTAN_API_BASE_URL", "https://configured.example.test/updates/");
+                using var configuredHttp = new HttpClient(new Handler(request =>
+                {
+                    if (request.RequestUri!.AbsoluteUri != "https://configured.example.test/updates/api.php?dir=TestClient")
+                        throw new InvalidDataException("Environment API URL was not applied.");
+                    return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("[]", Encoding.UTF8, "application/json") };
+                }));
+                using var configuredApi = new CloudApiClient(http: configuredHttp);
+                Check((await configuredApi.ListAsync("TestClient", "test-user", "test-password", CancellationToken.None)).Count == 0,
+                    "process API URL configures the shared desktop and CLI client");
+                Environment.SetEnvironmentVariable("TYTAN_API_BASE_URL", "http://invalid.example.test/");
+                using var injectedApi = new CloudApiClient(new Uri(CloudApiClient.DefaultBaseUrl));
+                Check(true, "explicitly injected API URL takes precedence over the environment");
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("TYTAN_API_BASE_URL", originalUrl);
+            }
 
             result = await Run(["../TestClient", standard[1]]);
             Check(result.Code == 1 && result.Requests == 0, "invalid client folder is rejected before HTTP");

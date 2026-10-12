@@ -1,13 +1,13 @@
 ﻿# Command-line updater
 
-Updated: October 9, 2026.
+Updated: October 12, 2026.
 
-The Windows console accepts exactly two names: the cloud customer folder and the installed product folder. It extracts the product and version from the second name and compares with the server. Only when a newer ZIP is available does it open a Windows Save As dialog to choose the destination, then download and validate the package. It reads no local configuration file and does not install packages.
+The Windows console accepts two required names and an optional destination directory: the cloud customer folder and the installed product folder. It extracts the product and version from the second name and compares with the server. For a newer ZIP, it uses the destination parameter when supplied; otherwise it opens Save As. It then downloads and validates the package. It reads no local configuration file and does not install packages.
 
 ## Arguments
 
 ```text
-Tytan.Updater.Cli <client-folder> <installed-folder-name>
+Tytan.Updater.Cli <client-folder> <installed-folder-name> [destination-folder]
 Tytan.Updater.Cli Barcin_Wodbar Faktury_008.000.042
 ```
 
@@ -17,6 +17,30 @@ Tytan.Updater.Cli Barcin_Wodbar Faktury_008.000.042
 The second argument is a name, not a path. Its format is product_NNN.NNN.NNN without a .zip extension. The last underscore separates the version, so product names can contain underscores. No JSON file or existing local folder is required. The supplied name is the source of the installed version; the CLI does not independently detect it.
 
 When a newer version is found, Save As suggests the available package's ZIP filename. Choose the folder and click Save. The chosen full path is used directly, without a customer subfolder. Cancelling the dialog stops before requesting ZIP data. If the installed version is equal or newer, no dialog opens. Existing ZIPs are preserved; selecting an existing file produces an error rather than overwriting it.
+
+### Download without a dialog
+
+The optional third argument is an existing local destination directory, not a ZIP filename:
+
+```powershell
+.\Tytan.Updater.Cli.exe Barcin_Wodbar Faktury_008.000.042 "C:\Tytan\Updates"
+```
+
+Create the directory first and ensure the account can write to it. Use quotes around paths containing spaces. Relative paths resolve against the terminal's current working directory. A newer package is saved directly as `<destination-folder>/<server-package-name>.zip`, without a customer subfolder or Save As dialog. An empty, missing, or file-valued destination is rejected before contacting the server. Existing ZIPs are preserved. If no newer version exists, the command prints `No updates available.` and downloads nothing.
+
+Omit the third argument to keep the existing Save As workflow. Both modes download and validate ZIPs; neither installs them.
+
+## Server configuration
+
+Both Windows applications read `TYTAN_API_BASE_URL` at startup. If it is unset, they use `https://tytan.poznan.pl/SQLupdate/`. To change the server without rebuilding:
+
+```powershell
+$env:TYTAN_API_BASE_URL = 'https://updates.example.com/SQLupdate/'
+```
+
+Use the HTTPS directory containing both `api.php` and `download.php`, with a trailing slash. Do not enter the full `api.php` URL. HTTP, embedded credentials, query strings, fragments, and invalid URLs are rejected. Restart the application after changing its environment. To restore the default, run `Remove-Item Env:TYTAN_API_BASE_URL` in the same terminal before starting it again. These commands configure only that terminal and applications launched from it.
+
+Credentials are configured separately. Set `TYTAN_API_USERNAME` and `TYTAN_API_PASSWORD` for the console; the desktop also allows entering them in its fields. The administrator changes the actual account on the hosting server. Changing credentials does not require rebuilding. The new server must expose the same endpoint names, JSON contract, and BasicAuth behavior; a URL change alone cannot adapt a different API.
 
 ## Run from PowerShell
 
@@ -65,13 +89,13 @@ dotnet publish cli/Tytan.Updater.Cli --configuration Release --runtime win-x64 -
 & ./downloads/cli-publish/Tytan.Updater.Cli.exe Barcin_Wodbar Faktury_008.000.042
 ```
 
-Distribute the whole published directory. This console executable is separate from the main desktop window, but requires an interactive Windows session for Save As. It targets net9.0-windows and uses Windows Forms for the dialog. Publishing with --self-contained true includes its .NET runtime.
+Distribute the whole published directory. This console executable is separate from the main desktop window, and requires an interactive Windows session only when using Save As. The third-argument mode opens no window. It targets net9.0-windows and uses Windows Forms for the dialog. Publishing with --self-contained true includes its .NET runtime.
 
 ```powershell
 dotnet run --project cli/Tytan.Updater.Cli --configuration Release -- --help
 dotnet run --project cli/Tytan.Updater.Cli --configuration Release -- --self-test
 ```
 
-All 24 CLI checks use temporary local fixtures, an injected HTTP handler and an injected destination chooser, never production. They cover equal/older/newer versions, authenticated listing/download, operation without local JSON or installed directories, existing ZIP preservation, invalid names and paths, product names containing underscores, missing packages, authentication errors, missing password, invalid ZIP cleanup, cancellation, exactly two arguments, and help. Chooser checks cover use of the selected path with spaces, no dialog without an update or after authentication failure, cancelling before download, and cancellation immediately after choosing a path. The desktop application's JSON-based workflow is separate and unchanged.
+All 42 CLI checks use temporary local fixtures, an injected HTTP handler and an injected destination chooser, never production. They cover equal/older/newer versions, authenticated listing/download, operation without local JSON or installed directories, existing ZIP preservation, invalid names and paths, product names containing underscores, missing packages, authentication errors, missing password, invalid ZIP cleanup, cancellation, two or three arguments, configurable API URLs, and help. Chooser checks cover use of the selected path with spaces, no dialog without an update or after authentication failure, cancelling before download, and cancellation immediately after choosing a path. Additional checks cover direct destinations, relative paths, custom listing/download URLs, environment configuration, invalid URLs, and invalid ZIP cleanup without a dialog. The desktop application's JSON-based workflow is separate.
 
 DownloadLocation runs SaveFileDialog on a dedicated STA thread because console HTTP continuations run on thread-pool threads. Command.RunAsync invokes it only after comparison selects a newer ZIP. Ctrl+C cancels the pending wait; the background dialog thread does not keep the console process alive.

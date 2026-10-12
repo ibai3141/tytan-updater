@@ -1,8 +1,8 @@
 # Tytan Updater — User guide
 
-Updated: October 9, 2026. Language: English.
+Updated: October 12, 2026. Language: English.
 
-This guide covers the retained first Windows application's behavior, available in the original win-x64 package and the additional win-x86 (32-bit) package. It covers the desktop window and the console executable. The desktop has Open installation file and Load example buttons. It does not automatically load a customer's remembered configuration.
+This guide covers the current Windows application, with win-x64 and win-x86 (32-bit) builds. The October 12 URL configuration and optional destination argument require a new executable; preserved October 9 packages do not include those additions. It covers the desktop window and the console executable. The desktop has Open installation file and Load example buttons. It does not automatically load a customer's remembered configuration.
 
 ## What the program does
 
@@ -19,11 +19,23 @@ There are two ways to use it:
 
 Both use the same server account supplied by the administrator. The password alone does not identify your customer folder or installed version.
 
+## Server configuration
+
+Both Windows applications read `TYTAN_API_BASE_URL` at startup. If it is unset, they use `https://tytan.poznan.pl/SQLupdate/`. To change the server without rebuilding:
+
+```powershell
+$env:TYTAN_API_BASE_URL = 'https://updates.example.com/SQLupdate/'
+```
+
+Use the HTTPS directory containing both `api.php` and `download.php`, with a trailing slash. Do not enter the full `api.php` URL. HTTP, embedded credentials, query strings, fragments, and invalid URLs are rejected. Restart the application after changing its environment. To restore the default, run `Remove-Item Env:TYTAN_API_BASE_URL` in the same terminal before starting it again. These commands configure only that terminal and applications launched from it.
+
+Credentials are configured separately. Set `TYTAN_API_USERNAME` and `TYTAN_API_PASSWORD` for the console; the desktop also allows entering them in its fields. The administrator changes the actual account on the hosting server. Changing credentials does not require rebuilding. The new server must expose the same endpoint names, JSON contract, and BasicAuth behavior; a URL change alone cannot adapt a different API.
+
 ## Before you begin
 
 Choose win-x86 for 32-bit Windows or win-x64 for 64-bit Intel/AMD Windows. The original TytanUpdater-win-x64-20261009-094714-e05a10 package requires 64-bit Windows; use the new win-x86 package on a 32-bit computer. Each package includes its matching .NET runtime. You also need an internet connection to the update server, server credentials, and actual customer/product/version information supplied by your administrator. Choose a download folder you can write to.
 
-You do not need Visual Studio, the .NET SDK, PHP, or the source repository. This package includes its .NET runtime. The console also opens a Windows Save As window, so it must run in an interactive Windows session.
+You do not need Visual Studio, the .NET SDK, PHP, or the source repository. This package includes its .NET runtime. The console opens Save As when no destination argument is supplied; that mode requires an interactive Windows session. Supplying the destination parameter downloads without a dialog.
 
 ## Extract the package
 
@@ -141,6 +153,18 @@ $env:TYTAN_API_PASSWORD = [System.Net.NetworkCredential]::new('', $secret).Passw
 ```
 
 Enter the password when prompted; its literal value is not displayed or written into the command. These variables are used by the program launched from this terminal. They are not automatically carried into a different terminal session. The application does not write them to a credentials file.
+
+### Download without a dialog
+
+The optional third argument is an existing local destination directory, not a ZIP filename:
+
+```powershell
+.\Tytan.Updater.Cli.exe Barcin_Wodbar Faktury_008.000.042 "C:\Tytan\Updates"
+```
+
+Create the directory first and ensure the account can write to it. Use quotes around paths containing spaces. Relative paths resolve against the terminal's current working directory. A newer package is saved directly as `<destination-folder>/<server-package-name>.zip`, without a customer subfolder or Save As dialog. An empty, missing, or file-valued destination is rejected before contacting the server. Existing ZIPs are preserved. If no newer version exists, the command prints `No updates available.` and downloads nothing.
+
+Omit the third argument to keep the existing Save As workflow. Both modes download and validate ZIPs; neither installs them.
 
 ### Run with the two names
 

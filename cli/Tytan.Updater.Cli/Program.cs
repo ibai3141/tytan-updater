@@ -27,6 +27,11 @@ internal static class Program
                     Environment.GetEnvironmentVariable("TYTAN_API_USERNAME") ?? "TytanSQL",
                     Environment.GetEnvironmentVariable("TYTAN_API_PASSWORD") ?? ""), cancellation.Token);
         }
+        catch (ArgumentException error)
+        {
+            Console.Error.WriteLine("Error: " + error.Message);
+            return 1;
+        }
         finally
         {
             Console.CancelKeyPress -= cancel;

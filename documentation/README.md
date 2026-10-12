@@ -1,17 +1,19 @@
 # Documentation index
 
-Updated: October 9, 2026. All guides are in English.
+Updated: October 12, 2026. All guides are in English.
 
-The documented delivery is the retained first package, TytanUpdater-win-x64-20261009-094714-e05a10. Its desktop loads an installation JSON or the example; its console accepts exactly two folder names and asks for the save location in a window. Subsequent automatic-configuration changes were reverted. The retained executable ZIP is unchanged.
+The preserved original delivery is TytanUpdater-win-x64-20261009-094714-e05a10. Its desktop loads an installation JSON or the example; its console accepts exactly two folder names and asks for the save location in a window. Subsequent automatic-configuration changes were reverted. The retained executable ZIP is unchanged.
 
 A separate win-x86 package provides the same application workflow for 32-bit Windows, including the matching runtime. See [distribution instructions](distribution.md) to choose or publish the correct architecture.
+
+The current source adds `TYTAN_API_BASE_URL` for both applications and an optional third CLI argument for the download directory. These features require a new build; the October 9 ZIPs are unchanged. See [CLI instructions](cli.md).
 
 ## Main guides
 
 | Audience | Markdown | Word | Coverage |
 | --- | --- | --- | --- |
 | Developers and technical reviewers | [Technical guide](technical-guide.md) | [Technical guide](technical-guide.docx) | Architecture, file/method responsibilities, actual source excerpts, inputs, auth, endpoints, comparison, downloads, packaging, results, integration limits |
-| End users and customer support | [User guide](user-guide.md) | [User guide](user-guide.docx) | Extraction, desktop steps, installation-file example, PowerShell credentials, two-argument CLI, Save As, status meanings, troubleshooting |
+| End users and customer support | [User guide](user-guide.md) | [User guide](user-guide.docx) | Extraction, desktop steps, installation-file example, PowerShell credentials, CLI destination parameter, server configuration, Save As, status meanings, troubleshooting |
 | PHP developers | [PHP walkthrough](technical-walkthrough.md) | [PHP walkthrough](technical-walkthrough.docx) | Additional endpoint and shared-function source excerpts |
 
 ## Focused references

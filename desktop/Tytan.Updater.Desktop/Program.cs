@@ -40,7 +40,15 @@ internal static class Program
             return 1;
         }
 
-        Application.Run(new MainForm(args.Length == 1 ? Path.GetFullPath(args[0]) : null));
-        return 0;
+        try
+        {
+            Application.Run(new MainForm(args.Length == 1 ? Path.GetFullPath(args[0]) : null));
+            return 0;
+        }
+        catch (ArgumentException error)
+        {
+            MessageBox.Show(error.Message, "Tytan Updater", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return 1;
+        }
     }
 }

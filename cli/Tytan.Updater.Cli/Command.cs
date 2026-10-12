@@ -6,7 +6,7 @@ internal sealed record Credentials(string Username, string Password);
 
 internal static class Command
 {
-    internal const string Usage = "Usage: Tytan.Updater.Cli <client-folder> <installed-folder-name>";
+    internal const string Usage = "Usage: Tytan.Updater.Cli <client-folder> <installed-folder-name> [destination-folder]";
 
     internal static async Task<int> RunAsync(string[] args, CloudApiClient api, TextWriter output,
         TextWriter error, Func<Credentials> credentials, CancellationToken token,
@@ -16,11 +16,11 @@ internal static class Command
         {
             await output.WriteLineAsync(Usage);
             await output.WriteLineAsync("Example: Tytan.Updater.Cli Barcin_Wodbar Faktury_008.000.042");
-            await output.WriteLineAsync("If an update is available, a Save As window lets you choose the ZIP destination. No local configuration file is read.");
+            await output.WriteLineAsync("The optional third argument is an existing destination folder. Without it, Save As opens for newer ZIPs. Set TYTAN_API_BASE_URL to change the HTTPS server directory. No local configuration file is read.");
             return 0;
         }
 
-        if (args.Length != 2)
+        if (args.Length is < 2 or > 3)
         {
             await error.WriteLineAsync(Usage);
             return 2;
@@ -43,6 +43,18 @@ internal static class Command
                 !PackageVersion.TryParse(installedFolder[(separator + 1)..], out _))
             {
                 throw new InvalidDataException("The second argument must be an installed folder name such as Faktury_008.000.042 (product_NNN.NNN.NNN).");
+            }
+
+            // A supplied destination is a directory, never a ZIP filename.
+            // Validate it before contacting the server and preserve existing files.
+            string? destinationFolder = null;
+            if (args.Length == 3)
+            {
+                if (string.IsNullOrWhiteSpace(args[2]))
+                    throw new InvalidDataException("The destination folder must be an existing directory.");
+                destinationFolder = Path.GetFullPath(args[2]);
+                if (!Directory.Exists(destinationFolder))
+                    throw new InvalidDataException("The destination folder must be an existing directory.");
             }
 
             var product = new InstalledProduct(installedFolder[..separator], installedFolder[(separator + 1)..]);
@@ -82,8 +94,17 @@ internal static class Command
             foreach (ProductUpdate update in updates)
             {
                 token.ThrowIfCancellationRequested();
-                await output.WriteLineAsync("Choose where to save " + update.Package!.Name + ".");
-                string? destination = await (chooseDestination ?? DownloadLocation.ChooseAsync)(update.Package.Name, token);
+                string? destination;
+                if (destinationFolder is not null)
+                {
+                    // Use the validated server package name directly inside the chosen directory.
+                    destination = Path.Combine(destinationFolder, update.Package!.Name);
+                }
+                else
+                {
+                    await output.WriteLineAsync("Choose where to save " + update.Package!.Name + ".");
+                    destination = await (chooseDestination ?? DownloadLocation.ChooseAsync)(update.Package.Name, token);
+                }
                 token.ThrowIfCancellationRequested();
                 if (destination is null)
                 {

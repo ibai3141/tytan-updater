@@ -188,3 +188,15 @@ This briefly opens the window, queries the example client Barcin_Wodbar, verifie
 The original documents reviewed on October 7 do not provide the definitive installation file or installer entry point. Automatic installation requires those details from Tytan.
 
 Phases 1 to 4 deliver local installation data, a cloud listing, version comparison, and validated ZIP downloading. The remaining integration requires the definitive local file and the installation contract.
+
+## Server configuration
+
+Both Windows applications read `TYTAN_API_BASE_URL` at startup. If it is unset, they use `https://tytan.poznan.pl/SQLupdate/`. To change the server without rebuilding:
+
+```powershell
+$env:TYTAN_API_BASE_URL = 'https://updates.example.com/SQLupdate/'
+```
+
+Use the HTTPS directory containing both `api.php` and `download.php`, with a trailing slash. Do not enter the full `api.php` URL. HTTP, embedded credentials, query strings, fragments, and invalid URLs are rejected. Restart the application after changing its environment. To restore the default, run `Remove-Item Env:TYTAN_API_BASE_URL` in the same terminal before starting it again. These commands configure only that terminal and applications launched from it.
+
+Credentials are configured separately. Set `TYTAN_API_USERNAME` and `TYTAN_API_PASSWORD` for the console; the desktop also allows entering them in its fields. The administrator changes the actual account on the hosting server. Changing credentials does not require rebuilding. The new server must expose the same endpoint names, JSON contract, and BasicAuth behavior; a URL change alone cannot adapt a different API.

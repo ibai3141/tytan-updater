@@ -25,14 +25,18 @@ $env:TYTAN_API_USERNAME = 'TytanSQL'
 $secret = Read-Host 'Server password' -AsSecureString
 $env:TYTAN_API_PASSWORD = [System.Net.NetworkCredential]::new('', $secret).Password
 
-Run with exactly two parameters:
+Run with two required parameters and an optional destination folder:
 
 .\Tytan.Updater.Cli.exe Barcin_Wodbar Faktury_008.000.042
 
 The first parameter is the client's cloud folder.
 The second is the installed product folder's NAME, containing its version.
 No JSON or existing local installation folder is required for the command line.
-If a newer ZIP exists, Save As opens so you can choose the destination.
+To download directly into an existing directory without opening Save As:
+.\Tytan.Updater.Cli.exe Barcin_Wodbar Faktury_008.000.042 "C:\Tytan\Updates"
+
+The third parameter must be an existing writable directory, not a ZIP filename.
+Without it, Save As opens only if a newer ZIP exists.
 If no newer version exists, the command prints No updates available.
 Cancel closes the operation without downloading. Existing files are preserved.
 
@@ -45,6 +49,12 @@ IMPORTANT BEHAVIOR
 
 Both programs check versions and download ZIPs. Neither installs updates.
 Downloading a ZIP does not change the installed version.
-Both connect to https://tytan.poznan.pl/SQLupdate/ over HTTPS.
+Both default to https://tytan.poznan.pl/SQLupdate/ over HTTPS.
+To use another server, set this before starting either executable from that terminal:
+$env:TYTAN_API_BASE_URL = 'https://updates.example.com/SQLupdate/'
+Use the directory containing api.php and download.php, ending with '/'.
+HTTP, embedded credentials, query strings and fragments are rejected.
+To change credentials, update the server account and enter/set the new values.
+No rebuild is needed for a URL or credential change with this release.
 Credentials are supplied separately by the administrator, not included in this package.
 All customers use the shared server account; client folder selection is not access isolation.

@@ -23,7 +23,8 @@ internal sealed partial class CloudApiClient : IDisposable
 
     public CloudApiClient(Uri? baseUri = null, HttpClient? http = null)
     {
-        this.baseUri = baseUri ?? new Uri(DefaultBaseUrl);
+        // An explicitly injected URI takes precedence over the process configuration.
+        this.baseUri = baseUri ?? ResolveBaseUri(Environment.GetEnvironmentVariable("TYTAN_API_BASE_URL"));
         if (!this.baseUri.IsAbsoluteUri || this.baseUri.Scheme != "https" ||
             this.baseUri.UserInfo != "" || this.baseUri.Query != "" || this.baseUri.Fragment != "" ||
             !this.baseUri.AbsolutePath.EndsWith('/'))
@@ -37,6 +38,18 @@ internal sealed partial class CloudApiClient : IDisposable
         {
             Timeout = TimeSpan.FromSeconds(30)
         };
+    }
+
+    internal static Uri ResolveBaseUri(string? configuredUrl)
+    {
+        string value = configuredUrl ?? DefaultBaseUrl;
+        if (!Uri.TryCreate(value, UriKind.Absolute, out Uri? uri) || uri.Scheme != "https" ||
+            uri.UserInfo != "" || uri.Query != "" || uri.Fragment != "" ||
+            !uri.AbsolutePath.EndsWith('/'))
+        {
+            throw new ArgumentException("TYTAN_API_BASE_URL must be an HTTPS directory URL ending with '/', without credentials, a query or a fragment (not api.php).");
+        }
+        return uri;
     }
 
     public async Task<IReadOnlyList<RemoteEntry>> ListAsync(
