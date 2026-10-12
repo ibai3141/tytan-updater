@@ -1,6 +1,6 @@
 # Tytan Updater — Technical guide
 
-Updated: October 12, 2026. Language: English.
+Updated: October 12, 2026.
 
 This guide describes the current source, including the October 12 configurable API URL and optional CLI destination parameter. The current packages also include optional executable-side `.env` configuration. Historical release checks below are labelled separately.
 

@@ -1,6 +1,6 @@
 # Tytan Updater — User guide
 
-Updated: October 12, 2026. Language: English.
+Updated: October 12, 2026.
 
 This guide covers the current Windows application, with win-x64 and win-x86 (32-bit) builds. Use the current October 12 packages, which include optional `.env` configuration, the configurable API URL, and the optional console destination argument. It covers the desktop window and the console executable. The desktop has Open installation file and Load example buttons. It does not automatically load a customer's remembered configuration.
 
