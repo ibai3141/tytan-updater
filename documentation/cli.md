@@ -1,121 +1,139 @@
-﻿# Command-line updater
+# Command-line updater
 
-Updated: October 12, 2026.
+The Windows console compares the installed product version you supply with the newest matching ZIP in the customer's cloud folder. It downloads a newer package to the directory supplied as the third argument, or opens Save As when that argument is omitted. It does not extract or install updates, detect installed software, or change the installed version.
 
-The Windows console accepts two required names and an optional destination directory: the cloud customer folder and the installed product folder. It extracts the product and version from the second name and compares with the server. For a newer ZIP, it uses the destination parameter when supplied; otherwise it opens Save As. It then downloads and validates the package. It reads no installation JSON file and does not install packages.
+## Start from the extracted package
 
-## Arguments
+Extract the package matching your Windows architecture: win-x86 for 32-bit Windows or win-x64 for 64-bit Intel/AMD Windows. Open PowerShell inside the extracted directory containing `Tytan.Updater.Cli.exe`.
 
-```text
-Tytan.Updater.Cli <client-folder> <installed-folder-name> [destination-folder]
-Tytan.Updater.Cli Barcin_Wodbar Faktury_008.000.042
-```
-
-- First argument: cloud customer folder, for example Barcin_Wodbar.
-- Second argument: installed product folder name, for example Faktury_008.000.042.
-
-The second argument is a name, not a path. Its format is product_NNN.NNN.NNN without a .zip extension. The last underscore separates the version, so product names can contain underscores. No installation JSON file or existing local installation folder is required. The supplied name is the source of the installed version; the CLI does not independently detect it.
-
-When a newer version is found, Save As suggests the available package's ZIP filename. Choose the folder and click Save. The chosen full path is used directly, without a customer subfolder. Cancelling the dialog stops before requesting ZIP data. If the installed version is equal or newer, no dialog opens. Existing ZIPs are preserved; selecting an existing file produces an error rather than overwriting it.
-
-### Download without a dialog
-
-The optional third argument is an existing local destination directory, not a ZIP filename:
+For example, when using the current x64 package in this repository:
 
 ```powershell
-.\Tytan.Updater.Cli.exe Barcin_Wodbar Faktury_008.000.042 "C:\Tytan\Updates"
+cd "C:\Users\Ibai\tytan-updater\dist\TytanUpdater-win-x64-20261012-093409-401bd4"
 ```
 
-Create the directory first and ensure the account can write to it. Use quotes around paths containing spaces. Relative paths resolve against the terminal's current working directory. A newer package is saved directly as `<destination-folder>/<server-package-name>.zip`, without a customer subfolder or Save As dialog. An empty, missing, or file-valued destination is rejected before contacting the server. Existing ZIPs are preserved. If no newer version exists, the command prints `No updates available.` and downloads nothing.
+Adjust the path if you extracted the ZIP elsewhere. The executable includes its .NET runtime; the customer does not need the SDK or source repository. Run it from a terminal: double-clicking without arguments prints usage and closes.
 
-Omit the third argument to keep the existing Save As workflow. Both modes download and validate ZIPs; neither installs them.
+## Configure the server and credentials
 
-## Server configuration
+Copy the template beside the executable:
 
-### Optional .env file beside the executables
+```powershell
+Copy-Item .env.example .env
+notepad .env
+```
 
-New builds also read `.env` from the executable's directory, regardless of the terminal's working directory. Copy the included `.env.example` to `.env` and edit it:
+Edit the file as needed:
 
 ```dotenv
 TYTAN_API_BASE_URL=https://tytan.poznan.pl/SQLupdate/
 TYTAN_API_USERNAME=TytanSQL
-# Optional: uncomment only to store a password in plain text.
+# Optional: uncomment and replace the placeholder to save a password here.
 # TYTAN_API_PASSWORD=your-server-password
 ```
 
-Restart the program after editing the file. Both programs use the same file when their executables are in the same directory. The desktop can then be started by double-clicking; enter the password in the window if it is omitted from `.env`. The console still requires a password from `.env` or `TYTAN_API_PASSWORD` in its environment. Its destination remains the optional third command-line argument; `.env` does not configure a download directory.
+The name must be `.env`, without a `.txt` extension. The program reads it from the executable's directory, independently of the terminal's working directory. URL and username have built-in defaults matching the example. The password must come from this file or a process environment variable. A password saved in `.env` is plain text; the program never writes this file. Only the template is included in distributable ZIPs.
 
-Precedence is: existing process environment, then `.env`, then the built-in URL/username defaults. If an old environment value overrides your file, remove that variable in the terminal or start the program from a session without it. Under `dotnet run`, the executable directory is the project's build output directory, not the repository root; the root `.env.example` is a template only and is not loaded automatically.
-
-The supported keys are exactly `TYTAN_API_BASE_URL`, `TYTAN_API_USERNAME`, and `TYTAN_API_PASSWORD`. Use UTF-8, one `KEY=value` per line; blank lines and lines beginning with `#` are ignored. Optional matching single or double quotes preserve spaces inside values. `#`, `=`, backslashes, and dollar signs inside a value are literal. Inline comments and variable/escape expansion are not supported. Duplicate or unknown keys, malformed lines, unmatched opening quotes, control characters, invalid UTF-8, or files larger than 64 KiB produce a configuration error. The error identifies the line without printing its content. The file is parsed before any values are applied.
-
-Only the credential-free `.env.example` belongs in Git and distributable ZIPs. Private `.env` and `.env.*` files are ignored, and the publisher never copies them. A password entered into `.env` is plain text; the program reads it but never writes or edits this file.
-
-
-Both Windows applications read `TYTAN_API_BASE_URL` at startup. If it is unset, they use `https://tytan.poznan.pl/SQLupdate/`. To change the server without rebuilding:
+To supply the password for the current PowerShell session instead of saving it in `.env`:
 
 ```powershell
-$env:TYTAN_API_BASE_URL = 'https://updates.example.com/SQLupdate/'
-```
-
-Use the HTTPS directory containing both `api.php` and `download.php`, with a trailing slash. Do not enter the full `api.php` URL. HTTP, embedded credentials, query strings, fragments, and invalid URLs are rejected. Restart the application after changing its environment. To restore the default, run `Remove-Item Env:TYTAN_API_BASE_URL` in the same terminal before starting it again. These commands configure only that terminal and applications launched from it.
-
-Credentials are configured separately. Set `TYTAN_API_USERNAME` and `TYTAN_API_PASSWORD` for the console; the desktop also allows entering them in its fields. The administrator changes the actual account on the hosting server. Changing credentials does not require rebuilding. The new server must expose the same endpoint names, JSON contract, and BasicAuth behavior; a URL change alone cannot adapt a different API.
-
-## Run from PowerShell
-
-From C:\Users\Ibai\tytan-updater, supply credentials to the current process environment. The password is requested without displaying it or putting its literal value in command history:
-
-```powershell
-$env:TYTAN_API_USERNAME = 'TytanSQL'
 $secret = Read-Host 'Server password' -AsSecureString
 $env:TYTAN_API_PASSWORD = [System.Net.NetworkCredential]::new('', $secret).Password
 ```
 
-Then run with only the two folder names; choose the destination in the window if an update is available:
+Existing environment variables take priority over `.env`, followed by the built-in defaults. You can override the URL or username for the current session:
 
 ```powershell
-dotnet run --project cli/Tytan.Updater.Cli --configuration Release -- Barcin_Wodbar Faktury_008.000.042
+$env:TYTAN_API_BASE_URL = 'https://updates.example.com/SQLupdate/'
+$env:TYTAN_API_USERNAME = 'your-server-user'
 ```
 
-After testing, remove the password from the current environment:
+Use the HTTPS directory containing both `api.php` and `download.php`, ending with `/`; do not include `api.php` in the configured URL. The server must provide the same endpoints, JSON contract, and BasicAuth behavior. HTTP, embedded credentials, queries, and fragments are rejected. Account changes are made on the hosting server, then reflected in the client credentials; recompilation is not required.
+
+If a previous environment value is overriding your `.env`, remove the relevant variable before running again, for example:
 
 ```powershell
-Remove-Item Env:TYTAN_API_PASSWORD
-Remove-Variable secret
+Remove-Item Env:TYTAN_API_BASE_URL -ErrorAction SilentlyContinue
 ```
 
-The default server is https://tytan.poznan.pl/SQLupdate/. The command requests api.php?dir=Barcin_Wodbar and, when a newer Faktury package is available, download.php?file=Barcin_Wodbar/Faktury_<new-version>.zip. Shared hosting credentials authenticate both requests. Choosing a folder does not restrict the shared account's server permissions.
+Use UTF-8 and one `KEY=value` per line. Supported keys are `TYTAN_API_BASE_URL`, `TYTAN_API_USERNAME`, and `TYTAN_API_PASSWORD`. Blank lines and full-line `#` comments are accepted. Matching single or double quotes preserve spaces inside values. Characters such as `#` and `=` inside passwords are literal. Inline comments, escape expansion, and variable expansion are not supported. Invalid lines, duplicate/unknown keys, invalid UTF-8, and files exceeding 64 KiB produce configuration errors without printing their contents.
 
-## Output and exit codes
+## Arguments
 
-The command prints the product's installed version, available version, and comparison result. Transfers report progress and ZIP validation. Success prints the final ZIP path. If the server version is equal or older, it prints No updates available. Missing matching products and HTTP/authentication failures are reported as errors.
+```text
+Tytan.Updater.Cli.exe <client-folder> <installed-folder-name> [destination-folder]
+```
+
+| Argument | Meaning | Example |
+| --- | --- | --- |
+| First, required | Customer folder on the server | Barcin_Wodbar |
+| Second, required | Installed product folder name containing its version | Faktury_008.000.042 |
+| Third, optional | Existing local directory for the downloaded ZIP | C:\Tytan\Updates |
+
+The second argument is a name, not a filesystem path. Use `product_NNN.NNN.NNN`, without `.zip`. The last underscore separates the version, so product names may contain underscores. No installation JSON or existing local installation folder is needed. The supplied version is used for comparison; ensure it matches the actual installed version.
+
+### Download directly into a directory
+
+Create the destination if needed, then run:
+
+```powershell
+New-Item -ItemType Directory -Path "C:\Tytan\Updates" -Force
+.\Tytan.Updater.Cli.exe Barcin_Wodbar Faktury_008.000.042 "C:\Tytan\Updates"
+```
+
+For a newer server version, the ZIP is saved directly in that directory using its server filename, without a customer subfolder or a dialog. Quote paths containing spaces. Relative destinations resolve against the terminal's working directory. Missing directories and paths pointing to files are rejected before contacting the server. Existing destination files are never overwritten.
+
+The destination parameter applies only to the console. It is not a `.env` setting.
+
+### Choose the destination in a window
+
+Omit the third argument:
+
+```powershell
+.\Tytan.Updater.Cli.exe Barcin_Wodbar Faktury_008.000.042
+```
+
+For a newer package, Save As suggests its ZIP filename. Choose the destination and click Save. This mode requires an interactive Windows session. Cancelling the dialog stops before requesting the ZIP.
+
+## Results and exit codes
+
+The command prints the installed version, available version, comparison result, download progress, and validation status. A successful download prints `ZIP saved to:` followed by the final path. If the installed version is equal or newer, it prints `No updates available.` and downloads nothing. A missing matching product package is an error.
 
 | Exit code | Meaning |
 | --- | --- |
-| 0 | No newer package, or the newer package downloaded successfully |
-| 1 | Invalid folder name, missing package, authentication/network/validation error, timeout, or existing destination |
-| 2 | Invalid number of command-line arguments |
+| 0 | No newer package, or download completed successfully |
+| 1 | Configuration, credentials, folder, network, timeout, ZIP validation, or destination error |
+| 2 | Invalid number of arguments |
 | 130 | Cancelled with Ctrl+C or Cancel in Save As |
 
-Incomplete downloads are removed. Completed ZIPs are not extracted or installed. Repeating the same arguments compares the same supplied installed version; downloading does not change that version.
+Failed or cancelled transfers remove their incomplete temporary files. A completed download does not install Tytan or change the supplied installed version. Running again with the same version can therefore find the same update.
 
-## Build, distribute, and test
+If PowerShell reports that `.\Tytan.Updater.Cli.exe` is not recognized, check that you are in the extracted directory containing the executable. If it reports `Set TYTAN_API_PASSWORD before running the command.`, supply the password through `.env` or the current terminal's environment.
 
-For a customer delivery containing both self-contained executables and instructions, use the [Windows distribution script](distribution.md). The command below publishes the console separately.
-
-```powershell
-dotnet publish cli/Tytan.Updater.Cli --configuration Release --runtime win-x64 --self-contained true --output downloads/cli-publish
-& ./downloads/cli-publish/Tytan.Updater.Cli.exe Barcin_Wodbar Faktury_008.000.042
-```
-
-Distribute the whole published directory. This console executable is separate from the main desktop window, and requires an interactive Windows session only when using Save As. The third-argument mode opens no window. It targets net9.0-windows and uses Windows Forms for the dialog. Publishing with --self-contained true includes its .NET runtime.
+After using a session password, remove it if desired:
 
 ```powershell
-dotnet run --project cli/Tytan.Updater.Cli --configuration Release -- --help
-dotnet run --project cli/Tytan.Updater.Cli --configuration Release -- --self-test
+Remove-Item Env:TYTAN_API_PASSWORD -ErrorAction SilentlyContinue
+Remove-Variable secret -ErrorAction SilentlyContinue
 ```
 
-All 42 CLI checks use temporary local fixtures, an injected HTTP handler and an injected destination chooser, never production. They cover equal/older/newer versions, authenticated listing/download, operation without local JSON or installed directories, existing ZIP preservation, invalid names and paths, product names containing underscores, missing packages, authentication errors, missing password, invalid ZIP cleanup, cancellation, two or three arguments, configurable API URLs, and help. Chooser checks cover use of the selected path with spaces, no dialog without an update or after authentication failure, cancelling before download, and cancellation immediately after choosing a path. Additional checks cover direct destinations, relative paths, custom listing/download URLs, environment configuration, invalid URLs, and invalid ZIP cleanup without a dialog. The desktop application's JSON-based workflow is separate.
+## Development and verification
 
-DownloadLocation runs SaveFileDialog on a dedicated STA thread because console HTTP continuations run on thread-pool threads. Command.RunAsync invokes it only after comparison selects a newer ZIP. Ctrl+C cancels the pending wait; the background dialog thread does not keep the console process alive.
+From the repository root, with the .NET 9 SDK installed:
+
+```powershell
+dotnet run --project cli/Tytan.Updater.Cli --configuration Release -- Barcin_Wodbar Faktury_008.000.042 "C:\Tytan\Updates"
+```
+
+For `dotnet run`, supply credentials through the terminal environment or place `.env` in the project's executable output directory. The repository-root template is not loaded automatically.
+
+From an extracted package:
+
+```powershell
+.\Tytan.Updater.Cli.exe --help
+.\Tytan.Updater.Cli.exe --self-test
+```
+
+Self-test runs 16 shared configuration checks and 42 CLI checks using temporary local fixtures, without production requests. It skips the user's `.env`. Checks cover environment precedence, configuration parsing, custom endpoints, version comparison, direct and dialog destinations, existing-file protection, validation errors, and cancellation.
+
+See [Windows distribution](distribution.md) for publishing self-contained 32-bit and 64-bit packages, and the [technical guide](technical-guide.md) for implementation details.
