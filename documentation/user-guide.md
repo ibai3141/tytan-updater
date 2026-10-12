@@ -15,7 +15,7 @@ There are two ways to use it:
 | Program | How you start it | How you supply installed-version information |
 | --- | --- | --- |
 | Tytan.Updater.Desktop.exe | Double-click | Load an installation JSON file, or Load example for a demonstration |
-| Tytan.Updater.Cli.exe | Run in PowerShell | Supply the customer's cloud folder and installed product/version name as two parameters |
+| Tytan.Updater.Cli.exe | Run in PowerShell | Supply two required folder names and an optional download directory |
 
 Both use the same server account supplied by the administrator. The password alone does not identify your customer folder or installed version.
 

@@ -1,6 +1,6 @@
 # Local updater application
 
-Updated: October 8, 2026.
+Updated: October 12, 2026.
 
 For customer delivery, see [Windows distribution](distribution.md). The publishing script creates a portable ZIP with self-contained desktop and console executables; customers do not need this repository or a separate .NET runtime installation.
 
@@ -23,11 +23,11 @@ Implemented:
 - Show English errors and preserve the last valid data on a failed replacement.
 - Keep JSON mapping in InstallationFileReader so the final format can be substituted.
 
-Phase 1 originally made no API calls. Phase 2 now adds the cloud listing described below. Phase 3 now compares versions. Phase 4 now downloads selected newer ZIPs. Installation is not implemented. Available-version and status cells show Not checked. Loading the example does not detect actual installations on this computer and does not modify the local file.
+The desktop loads installed-version data, lists the configured cloud folder, compares versions, and downloads selected newer ZIPs. Installation is not implemented. Available-version and status cells show Not checked. Loading the example does not detect actual installations on this computer and does not modify the local file.
 
 ## Phase 2: HTTPS cloud-folder listing
 
-Load an installation file or the example first. Enter the shared username and password, then click Check for updates. The request is:
+Load an installation file or the example first. Enter the shared username and password, then click Check for updates. With the default base URL, the request is:
 
 ```text
 https://tytan.poznan.pl/SQLupdate/api.php?dir=<loaded-clientFolder>
@@ -35,11 +35,11 @@ https://tytan.poznan.pl/SQLupdate/api.php?dir=<loaded-clientFolder>
 
 The application never fetches the root client list. Folder values are URL-encoded. The Cloud folder tab displays name, type, size in bytes, modification timestamp in UTC, and relative path. An empty folder is reported explicitly. Installed products and versions remain unchanged.
 
-The password is masked and retained only in process memory; it is not embedded in source or saved to disk. The username defaults to TytanSQL; enter the existing password supplied by the administrator. Optional private process variables TYTAN_API_USERNAME and TYTAN_API_PASSWORD can prefill the fields. Do not commit credential files.
+The password field is masked. The application does not write credentials to disk; it can read them from an optional `.env` beside the executable, where a user-supplied password is plain text. Existing process variables override `.env`. The username defaults to TytanSQL, and missing credentials can be entered in the window. See [server configuration](#server-configuration).
 
 Local-file and credential controls are disabled during a query to prevent changing the client mid-request. Cancel stops the query; closing the window also cancels it. Each new query clears stale cloud results. Errors appear in the status label, leaving valid installed data unchanged; controls are restored afterward.
 
-The 30-second deadline covers both headers and body reading. Automatic redirects are disabled, HTTPS is required, and standard certificate validation remains enabled. HTTP failures, malformed/non-JSON responses, invalid metadata, duplicate entries, and paths outside the loaded folder are rejected. Listings are limited to 8 MiB. Phase 2 originally displayed only metadata; phase 3 now also compares versions as described below.
+The 30-second deadline covers both headers and body reading. Automatic redirects are disabled, HTTPS is required, and standard certificate validation remains enabled. HTTP failures, malformed/non-JSON responses, invalid metadata, duplicate entries, and paths outside the loaded folder are rejected. Listings are limited to 8 MiB. The window also compares versions as described below.
 
 Client-side folder selection remains the expressly requested shared-account design; it does not restrict other callers who have the same credentials.
 
@@ -103,7 +103,7 @@ Neither the installed versions nor their source file is updated. No executable o
 
 ## Download verification
 
-The self-test now includes 23 download checks in addition to 10 local, 12 comparison, and 22 cloud checks: 67 total. Download checks cover encoded endpoint/authentication, exact saved bytes, progress and validation, existing/concurrent destination preservation, cross-client and non-update rejection, HTTP errors/redirects/partial responses, header/body size mismatches, invalid ZIPs, interrupted streams, cancellation cleanup, UI completion and ZIP errors, and unchanged installed data.
+The self-test includes 16 shared configuration checks, 10 local-file/window checks, 12 comparison checks, 22 cloud checks, and 23 download checks: 83 total. Download checks cover encoded endpoint/authentication, exact saved bytes, progress and validation, existing/concurrent destination preservation, cross-client and non-update rejection, HTTP errors/redirects/partial responses, header/body size mismatches, invalid ZIPs, interrupted streams, cancellation cleanup, UI completion and ZIP errors, and unchanged installed data.
 
 Optional real verification requires credentials privately supplied in TYTAN_API_USERNAME and TYTAN_API_PASSWORD:
 
@@ -169,7 +169,7 @@ dotnet build desktop/Tytan.Updater.Desktop --configuration Release
 dotnet run --project desktop/Tytan.Updater.Desktop --configuration Release --no-build -- --self-test
 ```
 
-The self-test briefly opens the actual window and checks the sample file, malformed JSON, folder traversal, malformed versions, duplicate/empty/null products, unexpected fields, rendered grid values, and preservation of valid data after an invalid replacement. The 12 comparison checks cover numeric precedence, invalid formats, newest selection regardless of dates, product isolation, equal/newer/missing outcomes, empty listings, case, underscores, and unchanged installed data. The additional 22 cloud checks use an injected HTTP handler for query encoding/BasicAuth, metadata, HTTP failures, redirects, empty folders, validation, HTTPS, window states, cancellation, timeout, displayed comparisons, failed-refresh resets, sorted rows, and empty-folder status. The self-test makes no production requests.
+The self-test first runs 16 isolated `.env` checks, then briefly opens the actual window and checks the sample file, malformed JSON, folder traversal, malformed versions, duplicate/empty/null products, unexpected fields, rendered grid values, and preservation of valid data after an invalid replacement. The 12 comparison checks cover numeric precedence, invalid formats, newest selection regardless of dates, product isolation, equal/newer/missing outcomes, empty listings, case, underscores, and unchanged installed data. The additional 22 cloud checks use an injected HTTP handler for query encoding/BasicAuth, metadata, HTTP failures, redirects, empty folders, validation, HTTPS, window states, cancellation, timeout, displayed comparisons, failed-refresh resets, sorted rows, and empty-folder status. The self-test makes no production requests.
 
 ## Optional real API verification
 

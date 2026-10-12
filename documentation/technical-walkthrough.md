@@ -1,10 +1,10 @@
 # Tytan Updater - PHP server technical documentation
 
-Updated: October 7, 2026.
+Updated: October 12, 2026.
 
-This document describes the delivered PHP server, its source code, deployment, integration contract, and observed results. A later clarification introduces a local Windows application, developed incrementally under desktop/. Its local-file window, HTTPS cloud listing, phase 3 numeric version comparison, and phase 4 validated ZIP download are documented separately in desktop.md. This guide remains the PHP server reference.
+This document describes the delivered PHP server, its source code, deployment, integration contract, and observed results. The Windows desktop and console applications provide version comparison and validated ZIP downloading; their workflows are documented separately in [desktop usage](desktop.md) and [console usage](cli.md). This guide remains the PHP server reference.
 
-For the complete retained implementation, including desktop, CLI, comparison, downloads, packaging, and method references, see [Technical guide](technical-guide.md). End-user steps are in [User guide](user-guide.md). This walkthrough remains the supplementary PHP source reference.
+For the complete implementation, including desktop, CLI, comparison, downloads, packaging, and method references, see [Technical guide](technical-guide.md). End-user steps are in [User guide](user-guide.md). This walkthrough remains the supplementary PHP source reference.
 
 ## 1. Purpose and responsibilities
 
@@ -462,7 +462,7 @@ python tests/server/test_endpoints.py --php C:/path/to/php.exe
 
 The current harness passes 37 checks on PHP 7.2.34 and PHP 8.5.11 in this Windows environment. Coverage includes syntax, authentication failures, method checks, root/client/empty listings, invalid parameters, traversal, non-ZIP requests, missing files, byte-for-byte downloads, headers, HEAD, names containing spaces/ampersands, root-prefix boundaries, invalid UTF-8 JSON error handling, and configuration failures. A filesystem symlink escape case is skipped if the operating system does not allow creating symlinks; the sibling-prefix check always runs. The tests do not validate production Apache configuration or concurrent load.
 
-The former C# prototype tests passed 17/17 before removal; this is historical evidence and no longer a runnable part of the current repository. The retained PHP test command needs Python and PHP only. The new desktop application has separate checks documented in desktop.md.
+The PHP test command needs Python and PHP only. Windows application checks are documented in [desktop usage](desktop.md) and [console usage](cli.md).
 
 To regenerate this Word document from the Markdown source:
 

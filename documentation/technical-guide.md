@@ -1,12 +1,12 @@
-# Tytan Updater — Technical guide
+# Tytan Updater â€” Technical guide
 
 Updated: October 12, 2026.
 
-This guide describes the current source, including the October 12 configurable API URL and optional CLI destination parameter. The current packages also include optional executable-side `.env` configuration. Historical release checks below are labelled separately.
+This guide describes the current source, including the October 12 configurable API URL and optional CLI destination parameter. The current packages also include optional executable-side `.env` configuration.
 
 ## Scope and implemented behavior
 
-The system publishes existing Tytan update ZIPs over HTTPS, compares available package versions against explicitly supplied installed versions, and downloads newer packages. It consists of a PHP server, a Windows Forms client, and a Windows console client. The console also uses a Windows Save As dialog.
+The system publishes existing Tytan update ZIPs over HTTPS, compares available package versions against explicitly supplied installed versions, and downloads newer packages. It consists of a PHP server, a Windows Forms client, and a Windows console client. The console uses a Windows Save As dialog only when no destination parameter is supplied.
 
 The desktop reads a provisional local installation JSON; the console derives one product/version from its second argument. Neither independently detects installed software, extracts packages, runs installers, updates the recorded installed version, or modifies the server package store. The definitive installed-version file and Tytan installation mechanism remain external integration work.
 
@@ -27,14 +27,14 @@ CLI: customer + product_version --> LocalInstallation+
                                                     |
                                          newer ProductUpdate
                                                     |
-                                        Windows Save As dialog
+                                destination argument or Save As
                                                     |
                      CloudApiClient.DownloadAsync -- HTTPS --> download.php
                                                     |
                              unique .part -> checks -> final ZIP
 ```
 
-The PHP server knows directories and files, not the installed client version. C# performs version selection. The Save As choice determines the local output path and is never sent as a server filesystem path.
+The PHP server knows directories and files, not the installed client version. C# performs version selection. The destination argument or Save As choice determines the local output path and is never sent as a server filesystem path.
 
 | Source | Responsibility |
 | --- | --- |
@@ -45,14 +45,16 @@ The PHP server knows directories and files, not the installed client version. C#
 | desktop/Tytan.Updater.Desktop/MainForm.cs | UI state, file selection, querying, comparison display, downloading |
 | desktop/Tytan.Updater.Desktop/InstallationFileReader.cs | Validate provisional JSON and produce local models |
 | desktop/Tytan.Updater.Desktop/UpdateComparison.cs | Numeric version parsing and package selection |
+| desktop/Tytan.Updater.Desktop/StartupConfiguration.cs | Read executable-side .env and apply environment precedence |
+| desktop/Tytan.Updater.Desktop/ConfigurationChecks.cs | Isolated shared configuration checks |
 | desktop/Tytan.Updater.Desktop/CloudApiClient.cs | HTTPS listing and metadata validation |
 | desktop/Tytan.Updater.Desktop/PackageDownload.cs | Streaming, progress, ZIP validation, and publication |
-| cli/Tytan.Updater.Cli/Program.cs | Console entry, credentials from environment, Ctrl+C |
-| cli/Tytan.Updater.Cli/Command.cs | Two-argument input, query/compare/download orchestration, exit codes |
+| cli/Tytan.Updater.Cli/Program.cs | Console entry, .env loading, credentials from merged environment, Ctrl+C |
+| cli/Tytan.Updater.Cli/Command.cs | Two required arguments, optional destination, query/compare/download orchestration, exit codes |
 | cli/Tytan.Updater.Cli/DownloadLocation.cs | Windows Save As on a dedicated STA thread |
 | scripts/publish_windows.ps1 | Publish two portable executables and package them |
 
-The CLI project links the existing reader, comparison, listing, and download source files through its csproj. These files keep their Tytan.Updater.Desktop namespace; linking does not open the main desktop window or create a second implementation.
+The CLI project links the shared configuration loader/checks, reader, comparison, listing, and download source files through its csproj. These files keep their Tytan.Updater.Desktop namespace; linking does not open the main desktop window or create a second implementation.
 
 ## Runtime and delivery
 
@@ -510,13 +512,13 @@ python tests/server/test_endpoints.py --php C:/path/to/php.exe
 | ConfigurationChecks (shared) | 16 | Optional file, parsing, literal secrets, precedence, malformed/oversized/invalid UTF-8 inputs |
 | Total distinct Windows checks | 125 | Local simulated responses/fixtures; no production requests |
 
-The earlier October 12 builds passed 109 checks per architecture. The current .env builds additionally pass the 16 shared configuration checks (125 distinct checks), plus published CLI startup integration checks. The x86 run used WOW64 on the development computer. No live server request was made. Package filenames and hashes are recorded in [Windows distribution](distribution.md).
+The current builds pass 125 distinct checks: 16 shared configuration checks, 67 desktop checks, and 42 CLI checks, plus published CLI startup integration checks. The shared suite runs in both executables. The x86 run used WOW64 on the development computer. No live server request was made. Package filenames and hashes are recorded in [Windows distribution](distribution.md).
 
 The PHP harness independently launches actual temporary PHP servers, creates owned ZIP fixtures, exercises endpoints/configuration failures, and cleans up. A server-only test run needs Python and PHP, not .NET.
 
 Desktop --verify-live performs a real read-only production listing/comparison; --verify-live-download performs a real Faktury download into an owned temporary verification directory and removes it afterward. They require private process credentials and should be treated as production-facing verification, unlike --self-test. No such request is necessary to regenerate documentation.
 
-Historically, the original release was checked after extraction: its console help, 24 CLI checks, and 67 desktop checks passed. Previous production verification listed the three packages above and downloaded Faktury_008.000.043.zip (17492922 bytes) successfully; installed example information remained unchanged. These are recorded results, not a new live request made for this guide. Acceptance on a representative customer PC remains necessary.
+Previous production verification listed the three packages above and downloaded Faktury_008.000.043.zip (17492922 bytes) successfully; installed example information remained unchanged. These are recorded results, not a new live request made for this guide. Acceptance on a representative customer PC remains necessary.
 
 Publishing uses the script below; it creates a new timestamped package when explicitly run:
 
@@ -531,7 +533,7 @@ The essential publish flags are:
 -p:PublishTrimmed=false -p:DebugType=None -p:DebugSymbols=false
 ```
 
-The script uses self-contained Release publishing, defaults to win-x64, accepts win-x86 and win-arm64, checks publish exit codes, copies two EXEs plus installation example, `.env.example`, and README, compresses a ZIP, and prints SHA256. It creates unique directories instead of deleting prior releases. Intermediate output is under ignored downloads/release-builds; releases are under ignored dist. Native runtime components may extract on launch. The original package's verification described above was on win-x64; the win-x86 package also passed all 91 Windows checks under WOW64 on the development computer. Acceptance testing on a customer computer running 32-bit Windows remains pending.
+The script uses self-contained Release publishing, defaults to win-x64, accepts win-x86 and win-arm64, checks publish exit codes, copies two EXEs plus installation example, `.env.example`, and README, compresses a ZIP, and prints SHA256. It creates unique directories instead of deleting prior releases. Intermediate output is under ignored downloads/release-builds; releases are under ignored dist. Native runtime components may extract on launch. Both published architectures passed all 125 distinct checks; the win-x86 run used WOW64 on the development computer. Acceptance testing on a customer computer running 32-bit Windows remains pending.
 
 To publish the 32-bit desktop and CLI with the x86 runtime:
 
@@ -543,7 +545,7 @@ Current package filenames and SHA256 hashes are listed in [Windows distribution]
 
 ## Integration boundaries and future changes
 
-To adapt a definitive installed-version file, replace the JSON mapping in InstallationFileReader while preserving LocalInstallation semantics. To change the production endpoint base, update/inject CloudApiClient's base URI and validate the HTTPS contract. Do not change server version selection: it belongs in the client comparison layer.
+To adapt a definitive installed-version file, replace the JSON mapping in InstallationFileReader while preserving LocalInstallation semantics. To change the production endpoint base, set `TYTAN_API_BASE_URL` in `.env` or the process environment. It must remain an HTTPS directory URL ending in `/` and expose the existing API contract. Do not change server version selection: it belongs in the client comparison layer.
 
 Automatic installation requires the real Tytan entry point, required arguments/paths, runtime behavior, success/failure signal, and ownership of installed-version updates. DownloadAsync's verified path can feed that confirmed mechanism. A completed download, a launched executable, or a closed installer window alone must not be treated as installation success.
 
