@@ -13,16 +13,7 @@ Use these builds to load the optional executable-side `.env`. The ZIP contains o
 
 These builds include 16 shared configuration checks in addition to the existing 109 Windows checks (125 distinct checks). Both applications run the shared configuration suite in self-test mode. Startup integration checks also launch the published CLI from a different working directory, verify environment precedence, and verify malformed-file errors without exposing values or contacting the server. The x86 verification uses WOW64; acceptance on a customer computer running actual 32-bit Windows remains pending.
 
-## Earlier October 12 delivery (without .env)
-
-The following newly published packages include the configurable URL and optional CLI destination directory:
-
-| Architecture | ZIP | SHA256 |
-| --- | --- | --- |
-| 32-bit Windows | TytanUpdater-win-x86-20261012-091453-5e2e3c.zip | B75F132C060A3D344E8D73A54C5588B3D1A5EAA8697AF73523C20255D4DA64DD |
-| 64-bit Intel/AMD Windows | TytanUpdater-win-x64-20261012-091529-a003b2.zip | 0483AB36AA4099232EE78A781E1FB57E90C38707AC53C6586845C96CA28C5A38 |
-
-Packages are generated locally under ignored `dist/`; Git commits contain the source and documentation. Both published architectures passed 42 CLI checks and 67 desktop checks (109 total each), using local fixtures without production requests. The x86 executables were tested under WOW64 on the development computer; acceptance on an actual 32-bit customer Windows installation remains pending. The preserved October 9 packages were not replaced.
+Only the two current ZIPs and their extracted directories remain under ignored `dist/`. Superseded release ZIPs/folders, intermediate publishing files, temporary check logs, and project `bin`/`obj` directories were removed during cleanup. Source, documentation, tests, templates, and current customer configuration remain. Building again recreates intermediate directories as needed. Git tracks source and documentation, not delivery ZIPs.
 
 ## Build a delivery
 
@@ -134,4 +125,4 @@ Create the directory first and ensure the account can write to it. Use quotes ar
 
 Omit the third argument to keep the existing Save As workflow. Both modes download and validate ZIPs; neither installs them.
 
-The configurable URL and destination parameter require newly published executables. Preserved October 9 ZIPs are unchanged.
+The current packages include `.env` support, the configurable URL, and the optional CLI destination parameter.

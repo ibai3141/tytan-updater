@@ -2,7 +2,7 @@
 
 Updated: October 12, 2026. Language: English.
 
-This guide describes the current source, including the October 12 configurable API URL and optional CLI destination parameter. Preserved October 9 ZIPs retain their original behavior and require replacement with a new build to use these additions. Historical release checks below are labelled separately.
+This guide describes the current source, including the October 12 configurable API URL and optional CLI destination parameter. The current packages also include optional executable-side `.env` configuration; obsolete local release artifacts have been removed. Historical release checks below are labelled separately.
 
 ## Scope and implemented behavior
 
@@ -122,7 +122,7 @@ return !string.IsNullOrWhiteSpace(name) && name[0] != '.' &&
     !Regex.IsMatch(name, "[\\x00-\\x1F\\x7F<>:\"\\\\|?*/]");
 ```
 
-The desktop does not save credentials or remember an installation configuration in this retained version. Each launch requires loading a file, choosing the example, or supplying an installation file argument at startup.
+The desktop does not save credentials or remember an installation configuration in the current version. Each launch requires loading a file, choosing the example, or supplying an installation file argument at startup.
 
 ## Desktop startup and UI orchestration
 
@@ -516,7 +516,7 @@ The PHP harness independently launches actual temporary PHP servers, creates own
 
 Desktop --verify-live performs a real read-only production listing/comparison; --verify-live-download performs a real Faktury download into an owned temporary verification directory and removes it afterward. They require private process credentials and should be treated as production-facing verification, unlike --self-test. No such request is necessary to regenerate documentation.
 
-The retained release was checked after extraction: its console help, 24 CLI checks, and 67 desktop checks passed. Previous production verification listed the three packages above and downloaded Faktury_008.000.043.zip (17492922 bytes) successfully; installed example information remained unchanged. These are recorded results, not a new live request made for this guide. Acceptance on a representative customer PC remains necessary.
+Historically, the original release was checked after extraction: its console help, 24 CLI checks, and 67 desktop checks passed. Previous production verification listed the three packages above and downloaded Faktury_008.000.043.zip (17492922 bytes) successfully; installed example information remained unchanged. These are recorded results, not a new live request made for this guide. Acceptance on a representative customer PC remains necessary.
 
 Publishing uses the script below; it creates a new timestamped package when explicitly run:
 
@@ -539,7 +539,7 @@ To publish the 32-bit desktop and CLI with the x86 runtime:
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/publish_windows.ps1 -Runtime win-x86
 ```
 
-The retained original ZIP is approximately 85.3 MiB, with SHA256 29A0E00943D989D0300CA11FE0AC78F8FB306BEB03E90B88733000A2A5F99D7E. It is preserved unchanged; the new user/technical guides are separate documentation artifacts.
+Only the current win-x64 and win-x86 delivery ZIPs and their extracted directories are retained locally. Older releases and generated build/check artifacts have been removed. Current package filenames and SHA256 hashes are listed in [Windows distribution](distribution.md).
 
 ## Integration boundaries and future changes
 

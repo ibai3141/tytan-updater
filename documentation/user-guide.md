@@ -2,7 +2,7 @@
 
 Updated: October 12, 2026. Language: English.
 
-This guide covers the current Windows application, with win-x64 and win-x86 (32-bit) builds. The October 12 URL configuration and optional destination argument require a new executable; preserved October 9 packages do not include those additions. It covers the desktop window and the console executable. The desktop has Open installation file and Load example buttons. It does not automatically load a customer's remembered configuration.
+This guide covers the current Windows application, with win-x64 and win-x86 (32-bit) builds. Use the current October 12 packages, which include optional `.env` configuration, the configurable API URL, and the optional console destination argument. It covers the desktop window and the console executable. The desktop has Open installation file and Load example buttons. It does not automatically load a customer's remembered configuration.
 
 ## What the program does
 
@@ -53,13 +53,13 @@ Credentials are configured separately. Set `TYTAN_API_USERNAME` and `TYTAN_API_P
 
 ## Before you begin
 
-Choose win-x86 for 32-bit Windows or win-x64 for 64-bit Intel/AMD Windows. The original TytanUpdater-win-x64-20261009-094714-e05a10 package requires 64-bit Windows; use the new win-x86 package on a 32-bit computer. Each package includes its matching .NET runtime. You also need an internet connection to the update server, server credentials, and actual customer/product/version information supplied by your administrator. Choose a download folder you can write to.
+Choose win-x86 for 32-bit Windows or win-x64 for 64-bit Intel/AMD Windows. The win-x64 package requires 64-bit Windows; use the win-x86 package on a 32-bit computer. Each package includes its matching .NET runtime. You also need an internet connection to the update server, server credentials, and actual customer/product/version information supplied by your administrator. Choose a download folder you can write to.
 
 You do not need Visual Studio, the .NET SDK, PHP, or the source repository. This package includes its .NET runtime. The console opens Save As when no destination argument is supplied; that mode requires an interactive Windows session. Supplying the destination parameter downloads without a dialog.
 
 ## Extract the package
 
-1. Obtain the retained Windows ZIP from the administrator.
+1. Obtain the current Windows ZIP from the administrator.
 2. Extract it into a folder on your computer before running either program.
 3. Keep the executable files, example installation file, README, and `.env.example` together:
 
@@ -71,7 +71,7 @@ installation.example.json
 README.txt
 ```
 
-The included JSON is sample data for demonstration. It does not describe the software installed on your computer. This retained package does not contain a configure_desktop.ps1 script and requires no such setup script.
+The included JSON is sample data for demonstration. It does not describe the software installed on your computer. This package does not contain a configure_desktop.ps1 script and requires no such setup script.
 
 ## Use the desktop interface
 
@@ -160,7 +160,7 @@ This is supplied metadata. The program does not inspect the computer to discover
 Open PowerShell and change to the folder where the package was extracted. For example:
 
 ```powershell
-cd "C:\Users\Ibai\Downloads\TytanUpdater-win-x64-20261009-094714-e05a10"
+cd "C:\Users\Ibai\Downloads\TytanUpdater-win-x64-20261012-093409-401bd4"
 ```
 
 Use your actual extracted-folder path. Running the CLI by double-clicking is not the intended workflow: without parameters it prints usage and closes immediately. Running it inside PowerShell keeps its messages visible.

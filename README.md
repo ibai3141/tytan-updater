@@ -22,7 +22,7 @@ The Windows console executable accepts two required folder names and an optional
 dotnet run --project cli/Tytan.Updater.Cli --configuration Release -- Barcin_Wodbar Faktury_008.000.042
 ```
 
-Set the server credentials in the process environment first. The configurable URL and destination parameter require a newly built executable; the preserved October 9 ZIPs retain their original behavior. See [CLI setup, arguments, credentials, output, and checks](documentation/cli.md).
+Set the server credentials in the process environment first. Use the current October 12 packages, which include `.env` support, the configurable URL, and the optional destination parameter. See [CLI setup, arguments, credentials, output, and checks](documentation/cli.md).
 
 ## Server configuration
 
