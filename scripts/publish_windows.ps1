@@ -7,9 +7,14 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $releaseId = 'TytanUpdater-' + $Runtime + '-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '-' + [guid]::NewGuid().ToString('N').Substring(0, 6)
 $buildRoot = Join-Path $repoRoot ('downloads/release-builds/' + $releaseId)
-$releaseRoot = Join-Path $repoRoot ('dist/' + $releaseId)
+$releaseRoot = Join-Path $repoRoot ('dist/TytanUpdater-' + $Runtime)
 
-# Every run owns new directories; never delete or overwrite another release.
+# Keep customer-facing names stable and protect existing packages/configuration.
+if ((Test-Path -LiteralPath $releaseRoot) -or (Test-Path -LiteralPath ($releaseRoot + '.zip'))) {
+    throw 'The delivery directory or ZIP already exists. Move it to another location before publishing again.'
+}
+
+# Use unique staging for each build and a stable name for the delivery.
 New-Item -ItemType Directory -Path $releaseRoot | Out-Null
 $projects = @(
     @{ Project = 'desktop/Tytan.Updater.Desktop'; Name = 'Tytan.Updater.Desktop' },

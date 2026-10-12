@@ -9,7 +9,7 @@ Extract the package matching your Windows architecture: win-x86 for 32-bit Windo
 For example, when using the current x64 package in this repository:
 
 ```powershell
-cd "C:\Users\Ibai\tytan-updater\dist\TytanUpdater-win-x64-20261012-093409-401bd4"
+cd "C:\Users\Ibai\tytan-updater\dist\TytanUpdater-win-x64"
 ```
 
 Adjust the path if you extracted the ZIP elsewhere. The executable includes its .NET runtime; the customer does not need the SDK or source repository. Run it from a terminal: double-clicking without arguments prints usage and closes.

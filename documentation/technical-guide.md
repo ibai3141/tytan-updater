@@ -533,7 +533,7 @@ The essential publish flags are:
 -p:PublishTrimmed=false -p:DebugType=None -p:DebugSymbols=false
 ```
 
-The script uses self-contained Release publishing, defaults to win-x64, accepts win-x86 and win-arm64, checks publish exit codes, copies two EXEs plus installation example, `.env.example`, and README, compresses a ZIP, and prints SHA256. It creates unique directories instead of deleting prior releases. Intermediate output is under ignored downloads/release-builds; releases are under ignored dist. Native runtime components may extract on launch. Both published architectures passed all 125 distinct checks; the win-x86 run used WOW64 on the development computer. Acceptance testing on a customer computer running 32-bit Windows remains pending.
+The script uses self-contained Release publishing, defaults to win-x64, accepts win-x86 and win-arm64, checks publish exit codes, copies two EXEs plus installation example, `.env.example`, and README, compresses a ZIP, and prints SHA256. Build staging uses a unique directory; delivery folders and ZIPs use stable names such as `TytanUpdater-win-x64`. Existing delivery directories or ZIPs must be moved elsewhere before publishing again. Intermediate output is under ignored downloads/release-builds; releases are under ignored dist. Native runtime components may extract on launch. Both published architectures passed all 125 distinct checks; the win-x86 run used WOW64 on the development computer. Acceptance testing on a customer computer running 32-bit Windows remains pending.
 
 To publish the 32-bit desktop and CLI with the x86 runtime:
 

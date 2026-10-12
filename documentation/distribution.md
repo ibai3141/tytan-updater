@@ -8,8 +8,8 @@ Use these builds to load the optional executable-side `.env`. The ZIP contains o
 
 | Architecture | ZIP | SHA256 |
 | --- | --- | --- |
-| 32-bit Windows | TytanUpdater-win-x86-20261012-093353-e5e374.zip | 3550D3E949A2CB444F224834EEC05019C7E1FE5D70D61AD1DA9892005BA9C3CB |
-| 64-bit Intel/AMD Windows | TytanUpdater-win-x64-20261012-093409-401bd4.zip | 68F342C8924DDB32CEE093231DFA21FCE303CD68D3BFD026D298BC884C84C05D |
+| 32-bit Windows | TytanUpdater-win-x86.zip | 3550D3E949A2CB444F224834EEC05019C7E1FE5D70D61AD1DA9892005BA9C3CB |
+| 64-bit Intel/AMD Windows | TytanUpdater-win-x64.zip | 68F342C8924DDB32CEE093231DFA21FCE303CD68D3BFD026D298BC884C84C05D |
 
 These builds include 16 shared configuration checks in addition to the existing 109 Windows checks (125 distinct checks). Both applications run the shared configuration suite in self-test mode. Startup integration checks also launch the published CLI from a different working directory, verify environment precedence, and verify malformed-file errors without exposing values or contacting the server. The x86 verification uses WOW64; acceptance on a customer computer running actual 32-bit Windows remains pending.
 
@@ -41,7 +41,7 @@ If the machine disables unsigned PowerShell scripts, invoke this trusted reposit
 powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/publish_windows.ps1
 ```
 
-The script publishes both projects with their runtime, single-file bundling, native-library self-extraction, no trimming, and no debug symbols. It stops on publishing failures and creates uniquely named directories instead of deleting prior releases. Build staging remains under ignored downloads/release-builds; distributable files and the delivery ZIP are under ignored dist. It prints the ZIP's SHA256 hash.
+The script publishes both projects with their runtime, single-file bundling, native-library self-extraction, no trimming, and no debug symbols. It stops on publishing failures and uses unique build staging and stable delivery names (`TytanUpdater-win-x86` or `TytanUpdater-win-x64`). If the destination directory or ZIP exists, move it elsewhere before publishing again. Build staging remains under ignored downloads/release-builds; distributable files and the delivery ZIP are under ignored dist. It prints the ZIP's SHA256 hash.
 
 Each release contains:
 
