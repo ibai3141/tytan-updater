@@ -486,7 +486,7 @@ Using the demonstration JSON and the production listing recorded during integrat
 | FK2025 | 005.005.007 | 005.005.007 | Up to date |
 | FK2026 | 005.005.039 | 005.005.040 | Update available |
 
-The desktop lists all three products. Selecting Faktury and saving as C:\Users\Ibai\Downloads\Faktury_008.000.043.zip causes an authenticated request for Barcin_Wodbar/Faktury_008.000.043.zip, an owned sibling .part write, byte checks, archive reading, and final rename. The JSON remains at 008.000.042 because downloading does not establish installation success.
+The desktop lists all three products. Selecting Faktury and saving as C:\Tytan\Updates\Faktury_008.000.043.zip causes an authenticated request for Barcin_Wodbar/Faktury_008.000.043.zip, an owned sibling .part write, byte checks, archive reading, and final rename. The JSON remains at 008.000.042 because downloading does not establish installation success.
 
 The equivalent console example checks only Faktury. It gets credentials from the current PowerShell environment, displays its comparison, opens Save As, and reports ZIP saved to followed by the actual selected full path. Running the same supplied version again still finds the update; choosing the same existing output path is an error, not a successful installation.
 

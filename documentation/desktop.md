@@ -135,7 +135,7 @@ Names must be valid single path/name segments. Installed versions must contain t
 Requires Windows and the .NET 9 SDK:
 
 ```powershell
-cd C:\Users\Ibai\tytan-updater
+cd "$env:USERPROFILE\tytan-updater"
 dotnet run --project desktop/Tytan.Updater.Desktop --configuration Release
 ```
 

@@ -159,7 +159,7 @@ This is supplied metadata. The program does not inspect the computer to discover
 Open PowerShell and change to the folder where the package was extracted. For example:
 
 ```powershell
-cd "C:\Users\Ibai\Downloads\TytanUpdater-win-x64"
+cd "$env:USERPROFILE\Downloads\TytanUpdater-win-x64"
 ```
 
 Use your actual extracted-folder path. Running the CLI by double-clicking is not the intended workflow: without parameters it prints usage and closes immediately. Running it inside PowerShell keeps its messages visible.
