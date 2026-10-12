@@ -57,7 +57,7 @@ def export(source, destination):
     for name in ['Title', 'Heading 1', 'Heading 2', 'Heading 3']:
         document.styles[name].font.color.rgb = RGBColor.from_string('17365D')
     document.core_properties.title = title
-    document.core_properties.subject = 'Tytan Updater: retained first Windows distribution and PHP server'
+    document.core_properties.subject = 'Tytan Updater: Windows applications and PHP server'
     document.core_properties.language = 'en-US'
     language = OxmlElement('w:lang')
     language.set(qn('w:val'), 'en-US')

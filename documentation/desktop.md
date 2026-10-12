@@ -1,16 +1,6 @@
 # Local updater application
 
-Updated: October 12, 2026.
-
 For customer delivery, see [Windows distribution](distribution.md). The publishing script creates a portable ZIP with self-contained desktop and console executables; customers do not need this repository or a separate .NET runtime installation.
-
-## Agreed workflow
-
-The local Windows application will identify the client from local information, query the corresponding folder on the existing cloud API, compare available package versions with locally installed versions, and allow downloading newer ZIPs. Installation of those ZIPs remains a separate responsibility to confirm with Tytan.
-
-All clients will use the same existing BasicAuth account, as explicitly requested. Selecting dir from a local file determines which folder the application displays; it is not server-side customer authorization. Someone with that account can request another folder. The server remains unchanged for this workflow.
-
-The definitive local file is being produced by another developer. Its path, structure, and update rules have not yet been supplied. The client identifier might instead come from a local folder name; this source is also pending. This phase uses an explicit JSON example and does not infer a client from arbitrary folders on the computer.
 
 ## Phase 1: local window and installation file
 
@@ -111,7 +101,7 @@ Optional real verification requires credentials privately supplied in TYTAN_API_
 dotnet run --project desktop/Tytan.Updater.Desktop --configuration Release --no-build -- --verify-live-download
 ```
 
-This queries Barcin_Wodbar using the example installation, downloads Faktury to a newly owned temporary test directory, validates it, checks that installed information is unchanged, and removes the directory afterward. It does not leave a package for installation. Use the normal window to save a package permanently. The real check passed on October 7, 2026, for Faktury_008.000.043.zip (17492922 bytes). No installation was performed.
+This queries Barcin_Wodbar using the example installation, downloads Faktury to a newly owned temporary test directory, validates it, checks that installed information is unchanged, and removes the directory afterward. It does not leave a package for installation. Use the normal window to save a package permanently. The real check passed for Faktury_008.000.043.zip (17492922 bytes). No installation was performed.
 
 ## Provisional input contract
 
@@ -181,14 +171,6 @@ dotnet run --project desktop/Tytan.Updater.Desktop --configuration Release --no-
 
 This briefly opens the window, queries the example client Barcin_Wodbar, verifies entries and comparison results are displayed while installed versions stay unchanged, then closes. It never downloads ZIPs. Phase 2 successfully displayed three real production packages; phase 3 also compared them and showed two updates against the example installed versions. Set TYTAN_DESKTOP_CAPTURE to an output PNG path to capture only this application's window during verification; the password remains masked.
 
-## Next phases
-
-1. Adapt the reader to the definitive local file and confirm how Tytan applies packages and maintains that file after successful installation.
-
-The original documents reviewed on October 7 do not provide the definitive installation file or installer entry point. Automatic installation requires those details from Tytan.
-
-Phases 1 to 4 deliver local installation data, a cloud listing, version comparison, and validated ZIP downloading. The remaining integration requires the definitive local file and the installation contract.
-
 ## Server configuration
 
 ### Optional .env file beside the executables
@@ -209,7 +191,6 @@ Precedence is: existing process environment, then `.env`, then the built-in URL/
 The supported keys are exactly `TYTAN_API_BASE_URL`, `TYTAN_API_USERNAME`, and `TYTAN_API_PASSWORD`. Use UTF-8, one `KEY=value` per line; blank lines and lines beginning with `#` are ignored. Optional matching single or double quotes preserve spaces inside values. `#`, `=`, backslashes, and dollar signs inside a value are literal. Inline comments and variable/escape expansion are not supported. Duplicate or unknown keys, malformed lines, unmatched opening quotes, control characters, invalid UTF-8, or files larger than 64 KiB produce a configuration error. The error identifies the line without printing its content. The file is parsed before any values are applied.
 
 Only the credential-free `.env.example` belongs in Git and distributable ZIPs. Private `.env` and `.env.*` files are ignored, and the publisher never copies them. A password entered into `.env` is plain text; the program reads it but never writes or edits this file.
-
 
 Both Windows applications read `TYTAN_API_BASE_URL` at startup. If it is unset, they use `https://tytan.poznan.pl/SQLupdate/`. To change the server without rebuilding:
 

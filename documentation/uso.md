@@ -1,7 +1,5 @@
 # Using the deployed endpoints
 
-Updated: October 6, 2026.
-
 Use a browser for manual checks or an HTTP client with BasicAuth for application integration. When the browser requests credentials, enter the account configured by the hosting administrator. No credentials are stored in this document.
 
 ## URLs

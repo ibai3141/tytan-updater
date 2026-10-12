@@ -22,7 +22,7 @@ The Windows console executable accepts two required folder names and an optional
 dotnet run --project cli/Tytan.Updater.Cli --configuration Release -- Barcin_Wodbar Faktury_008.000.042
 ```
 
-Set the server credentials in the process environment first. Use the current October 12 packages, which include `.env` support, the configurable URL, and the optional destination parameter. See [CLI setup, arguments, credentials, output, and checks](documentation/cli.md).
+Set the server credentials in the process environment first. Use the current packages, which include `.env` support, the configurable URL, and the optional destination parameter. See [CLI setup, arguments, credentials, output, and checks](documentation/cli.md).
 
 ## Server configuration
 
@@ -44,7 +44,6 @@ Precedence is: existing process environment, then `.env`, then the built-in URL/
 The supported keys are exactly `TYTAN_API_BASE_URL`, `TYTAN_API_USERNAME`, and `TYTAN_API_PASSWORD`. Use UTF-8, one `KEY=value` per line; blank lines and lines beginning with `#` are ignored. Optional matching single or double quotes preserve spaces inside values. `#`, `=`, backslashes, and dollar signs inside a value are literal. Inline comments and variable/escape expansion are not supported. Duplicate or unknown keys, malformed lines, unmatched opening quotes, control characters, invalid UTF-8, or files larger than 64 KiB produce a configuration error. The error identifies the line without printing its content. The file is parsed before any values are applied.
 
 Only the credential-free `.env.example` belongs in Git and distributable ZIPs. Private `.env` and `.env.*` files are ignored, and the publisher never copies them. A password entered into `.env` is plain text; the program reads it but never writes or edits this file.
-
 
 Both Windows applications read `TYTAN_API_BASE_URL` at startup. If it is unset, they use `https://tytan.poznan.pl/SQLupdate/`. To change the server without rebuilding:
 
@@ -104,7 +103,7 @@ https://tytan.poznan.pl/SQLupdate/api.php?dir=Barcin_Wodbar
 https://tytan.poznan.pl/SQLupdate/download.php?file=Barcin_Wodbar/Faktury_008.000.043.zip
 ```
 
-On October 6, 2026, the user supplied successful root and client JSON listings and confirmed that downloading also works. The hosting runtime is PHP 7.2.34. Local tests passed on PHP 7.2.34 and PHP 8.5.11. See the [technical guide](documentation/technical-guide.md) for validation results and integration limits.
+The user supplied successful root and client JSON listings and confirmed that downloading works. The hosting runtime is PHP 7.2.34. Local tests passed on PHP 7.2.34 and PHP 8.5.11. See the [technical guide](documentation/technical-guide.md) for validation results and integration limits.
 
 ## Local tests
 

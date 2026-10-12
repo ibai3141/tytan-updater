@@ -1,7 +1,5 @@
 # PHP server: listing and downloading update packages
 
-Updated: October 6, 2026.
-
 The corrected scope includes creating `api.php` and `download.php`. The repository now supplies both endpoints and `common.php`, their shared implementation. They use the contract in the original integration guide for integration with Tytan's own application. Tytan still handles installation.
 
 ## Files and deployment layout
@@ -60,13 +58,15 @@ The root request lists folders and any ZIP packages at the root. The dir paramet
 
 Response example, using illustrative values:
 
+In this response template, `<UTC timestamp>` stands for the modification time returned by the server.
+
 ```json
 [
   {
     "name": "Faktury_008.000.043.zip",
     "type": "file",
     "size": 17492992,
-    "modified": "2026-09-29 09:15:00",
+    "modified": "<UTC timestamp>",
     "path": "Barcin_Wodbar/Faktury_008.000.043.zip"
   }
 ]

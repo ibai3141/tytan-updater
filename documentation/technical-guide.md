@@ -1,8 +1,6 @@
-# Tytan Updater â€” Technical guide
+# Tytan Updater - Technical guide
 
-Updated: October 12, 2026.
-
-This guide describes the current source, including the October 12 configurable API URL and optional CLI destination parameter. The current packages also include optional executable-side `.env` configuration.
+This guide describes the current source, including the configurable API URL and optional CLI destination parameter. The current packages also include optional executable-side `.env` configuration.
 
 ## Scope and implemented behavior
 
@@ -249,7 +247,6 @@ The supported keys are exactly `TYTAN_API_BASE_URL`, `TYTAN_API_USERNAME`, and `
 
 Only the credential-free `.env.example` belongs in Git and distributable ZIPs. Private `.env` and `.env.*` files are ignored, and the publisher never copies them. A password entered into `.env` is plain text; the program reads it but never writes or edits this file.
 
-
 Both Windows applications read `TYTAN_API_BASE_URL` at startup. If it is unset, they use `https://tytan.poznan.pl/SQLupdate/`. To change the server without rebuilding:
 
 ```powershell
@@ -295,13 +292,15 @@ Only the specified client folder is requested. Root listing is supported by PHP 
 
 The server returns an array, including an empty array for an empty directory:
 
+In this response template, `<UTC timestamp>` stands for the modification time returned by the server.
+
 ```json
 [
   {
     "name": "Faktury_008.000.043.zip",
     "type": "file",
     "size": 17492922,
-    "modified": "2026-10-02 06:57:29",
+    "modified": "<UTC timestamp>",
     "path": "Barcin_Wodbar/Faktury_008.000.043.zip"
   }
 ]

@@ -2,7 +2,7 @@
 
 The user receives a ZIP containing two self-contained executables, a provisional example installation file, a credential-free `.env.example`, and English usage instructions. Source code, PHP files, credentials, the .NET SDK, and build directories are not included. No separate .NET runtime installation is required.
 
-## October 12 .env delivery (current)
+## Current delivery
 
 Use these builds to load the optional executable-side `.env`. The ZIP contains only a safe `.env.example` template; no private configuration or password is included.
 
@@ -101,7 +101,6 @@ Precedence is: existing process environment, then `.env`, then the built-in URL/
 The supported keys are exactly `TYTAN_API_BASE_URL`, `TYTAN_API_USERNAME`, and `TYTAN_API_PASSWORD`. Use UTF-8, one `KEY=value` per line; blank lines and lines beginning with `#` are ignored. Optional matching single or double quotes preserve spaces inside values. `#`, `=`, backslashes, and dollar signs inside a value are literal. Inline comments and variable/escape expansion are not supported. Duplicate or unknown keys, malformed lines, unmatched opening quotes, control characters, invalid UTF-8, or files larger than 64 KiB produce a configuration error. The error identifies the line without printing its content. The file is parsed before any values are applied.
 
 Only the credential-free `.env.example` belongs in Git and distributable ZIPs. Private `.env` and `.env.*` files are ignored, and the publisher never copies them. A password entered into `.env` is plain text; the program reads it but never writes or edits this file.
-
 
 Both Windows applications read `TYTAN_API_BASE_URL` at startup. If it is unset, they use `https://tytan.poznan.pl/SQLupdate/`. To change the server without rebuilding:
 

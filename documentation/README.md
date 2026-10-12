@@ -1,12 +1,10 @@
 # Documentation index
 
-Updated: October 12, 2026.
-
-The current delivery consists of the October 12 `.env` packages: TytanUpdater-win-x64 and TytanUpdater-win-x86. The desktop loads an installation JSON or the example. The console accepts two required folder names and an optional destination directory; omitting the destination opens Save As for newer packages.
+The current delivery consists of the `.env` packages: TytanUpdater-win-x64 and TytanUpdater-win-x86. The desktop loads an installation JSON or the example. The console accepts two required folder names and an optional destination directory; omitting the destination opens Save As for newer packages.
 
 A separate win-x86 package provides the same application workflow for 32-bit Windows, including the matching runtime. See [distribution instructions](distribution.md) to choose or publish the correct architecture.
 
-New builds also support an optional `.env` beside both executables, with a credential-free `.env.example` template and environment-variable precedence. See [user configuration](user-guide.md#server-configuration).
+New builds also support an optional `.env` beside both executables, with a credential-free `.env.example` template and environment-variable precedence. See [user configuration](user-guide.md#save-connection-settings-once).
 
 The current source adds `TYTAN_API_BASE_URL` for both applications and an optional third CLI argument for the download directory. These features are included in the current packages. See [CLI instructions](cli.md).
 
@@ -15,7 +13,7 @@ The current source adds `TYTAN_API_BASE_URL` for both applications and an option
 | Audience | Markdown | Word | Coverage |
 | --- | --- | --- | --- |
 | Developers and technical reviewers | [Technical guide](technical-guide.md) | [Technical guide](technical-guide.docx) | Architecture, file/method responsibilities, actual source excerpts, inputs, auth, endpoints, comparison, downloads, packaging, results, integration limits |
-| End users and customer support | [User guide](user-guide.md) | [User guide](user-guide.docx) | Extraction, desktop steps, installation-file example, PowerShell credentials, CLI destination parameter, server configuration, Save As, status meanings, troubleshooting |
+| End users and customer support | [User guide](user-guide.md) | [User guide](user-guide.docx) | Windows setup, desktop steps, connection settings, optional console usage, status meanings, and basic troubleshooting |
 | PHP developers | [PHP walkthrough](technical-walkthrough.md) | [PHP walkthrough](technical-walkthrough.docx) | Additional endpoint and shared-function source excerpts |
 
 ## Focused references

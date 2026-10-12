@@ -1,7 +1,5 @@
 # Tytan Updater - PHP server technical documentation
 
-Updated: October 12, 2026.
-
 This document describes the delivered PHP server, its source code, deployment, integration contract, and observed results. The Windows desktop and console applications provide version comparison and validated ZIP downloading; their workflows are documented separately in [desktop usage](desktop.md) and [console usage](cli.md). This guide remains the PHP server reference.
 
 For the complete implementation, including desktop, CLI, comparison, downloads, packaging, and method references, see [Technical guide](technical-guide.md). End-user steps are in [User guide](user-guide.md). This walkthrough remains the supplementary PHP source reference.
@@ -433,18 +431,18 @@ Use an HTTP library to encode query values and handle authentication and HTTP fa
 
 The following root listing was supplied by the user after deploying the compatibility fix:
 
-| Name | Type | Size | Modified (UTC) |
-| --- | --- | --- | --- |
-| Barcin_Wodbar | folder | null | 2026-10-02 06:57:35 |
-| barczewo_zwik | folder | null | 2026-10-02 06:57:44 |
+| Name | Type | Size |
+| --- | --- | --- |
+| Barcin_Wodbar | folder | null |
+| barczewo_zwik | folder | null |
 
 The client listing for Barcin_Wodbar contained:
 
-| Package | Size (bytes) | Modified (UTC) |
-| --- | --- | --- |
-| FK2025_005.005.007.zip | 11006463 | 2026-10-02 06:57:35 |
-| FK2026_005.005.040.zip | 26190268 | 2026-10-02 06:57:38 |
-| Faktury_008.000.043.zip | 17492922 | 2026-10-02 06:57:29 |
+| Package | Size (bytes) |
+| --- | --- |
+| FK2025_005.005.007.zip | 11006463 |
+| FK2026_005.005.040.zip | 26190268 |
+| Faktury_008.000.043.zip | 17492922 |
 
 Each entry has type file and a relative path consisting of Barcin_Wodbar/ plus the package name. These values are copied from the actual JSON supplied by the user, not illustrative test fixtures.
 
