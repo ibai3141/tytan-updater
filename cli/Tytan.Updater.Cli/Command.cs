@@ -16,7 +16,7 @@ internal static class Command
         {
             await output.WriteLineAsync(Usage);
             await output.WriteLineAsync("Example: Tytan.Updater.Cli Barcin_Wodbar Faktury_008.000.042");
-            await output.WriteLineAsync("The optional third argument is an existing destination folder. Without it, Save As opens for newer ZIPs. Set TYTAN_API_BASE_URL to change the HTTPS server directory. No local configuration file is read.");
+            await output.WriteLineAsync("The optional third argument is an existing destination folder. Without it, Save As opens for newer ZIPs. Set TYTAN_API_BASE_URL to change the HTTPS server directory. No installation JSON file is read.");
             return 0;
         }
 

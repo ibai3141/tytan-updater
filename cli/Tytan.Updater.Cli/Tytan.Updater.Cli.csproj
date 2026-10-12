@@ -7,6 +7,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../desktop/Tytan.Updater.Desktop/StartupConfiguration.cs" Link="Shared/StartupConfiguration.cs" />
+    <Compile Include="../../desktop/Tytan.Updater.Desktop/ConfigurationChecks.cs" Link="Shared/ConfigurationChecks.cs" />
     <!-- Share the tested HTTP, comparison and download code with the window. -->
     <Compile Include="../../desktop/Tytan.Updater.Desktop/InstallationFileReader.cs" Link="Shared/InstallationFileReader.cs" />
     <Compile Include="../../desktop/Tytan.Updater.Desktop/UpdateComparison.cs" Link="Shared/UpdateComparison.cs" />

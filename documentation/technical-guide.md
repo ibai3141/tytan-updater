@@ -210,7 +210,43 @@ TerminalProgress reports stage changes and roughly ten-percentage-point incremen
 
 --help/-h prints help without credentials or a request. --self-test runs local checks. Double-clicking the console EXE without arguments prints usage then exits; run it from PowerShell to see the output and provide parameters.
 
+## Startup configuration implementation
+
+`StartupConfiguration.Load` is called before constructing the API client or main window. It reads `Path.Combine(AppContext.BaseDirectory, ".env")`, parses all entries, and fills only unset process environment variables. Existing URL resolution and credential fields then consume the merged values. Startup IO, syntax, and URL errors produce an English console error (exit 1) or a desktop error dialog. Missing `.env` is accepted. `--self-test` skips the user's file and runs isolated configuration fixtures instead; both projects compile the same loader and shared checks.
+
+```csharp
+internal static void Load()
+    {
+        // Resolve next to the executable, independently of the working directory.
+        var values = ReadFile(Path.Combine(AppContext.BaseDirectory, ".env"));
+        Apply(values, Environment.GetEnvironmentVariable, Environment.SetEnvironmentVariable);
+    }
+
+```
+
+`ReadFile` returns a dictionary and rejects invalid input without including secret values in errors. `Apply` accepts injected getter/setter functions so precedence is tested without modifying the test process's real credentials. `Keys` restricts the file to the three supported settings; `InvalidLine` constructs errors containing only a line number.
+
 ## Server configuration
+
+### Optional .env file beside the executables
+
+New builds also read `.env` from the executable's directory, regardless of the terminal's working directory. Copy the included `.env.example` to `.env` and edit it:
+
+```dotenv
+TYTAN_API_BASE_URL=https://tytan.poznan.pl/SQLupdate/
+TYTAN_API_USERNAME=TytanSQL
+# Optional: uncomment only to store a password in plain text.
+# TYTAN_API_PASSWORD=your-server-password
+```
+
+Restart the program after editing the file. Both programs use the same file when their executables are in the same directory. The desktop can then be started by double-clicking; enter the password in the window if it is omitted from `.env`. The console still requires a password from `.env` or `TYTAN_API_PASSWORD` in its environment. Its destination remains the optional third command-line argument; `.env` does not configure a download directory.
+
+Precedence is: existing process environment, then `.env`, then the built-in URL/username defaults. If an old environment value overrides your file, remove that variable in the terminal or start the program from a session without it. Under `dotnet run`, the executable directory is the project's build output directory, not the repository root; the root `.env.example` is a template only and is not loaded automatically.
+
+The supported keys are exactly `TYTAN_API_BASE_URL`, `TYTAN_API_USERNAME`, and `TYTAN_API_PASSWORD`. Use UTF-8, one `KEY=value` per line; blank lines and lines beginning with `#` are ignored. Optional matching single or double quotes preserve spaces inside values. `#`, `=`, backslashes, and dollar signs inside a value are literal. Inline comments and variable/escape expansion are not supported. Duplicate or unknown keys, malformed lines, unmatched opening quotes, control characters, invalid UTF-8, or files larger than 64 KiB produce a configuration error. The error identifies the line without printing its content. The file is parsed before any values are applied.
+
+Only the credential-free `.env.example` belongs in Git and distributable ZIPs. Private `.env` and `.env.*` files are ignored, and the publisher never copies them. A password entered into `.env` is plain text; the program reads it but never writes or edits this file.
+
 
 Both Windows applications read `TYTAN_API_BASE_URL` at startup. If it is unset, they use `https://tytan.poznan.pl/SQLupdate/`. To change the server without rebuilding:
 
@@ -471,9 +507,10 @@ python tests/server/test_endpoints.py --php C:/path/to/php.exe
 | CloudChecks | 22 | HTTP/auth/query metadata, redirects, errors, cancellation, timeout, sorting, empty folders |
 | DownloadChecks | 23 | ZIP bytes/progress, size/HTTP/ZIP failures, cancellation, existing-file races, UI completion |
 | CommandChecks | 42 | Two/three-argument input, direct destination validation, custom URLs/environment settings, authenticated transfers, cancellation, errors, help |
-| Total Windows checks | 109 | Local simulated responses/fixtures; no production requests |
+| ConfigurationChecks (shared) | 16 | Optional file, parsing, literal secrets, precedence, malformed/oversized/invalid UTF-8 inputs |
+| Total distinct Windows checks | 125 | Local simulated responses/fixtures; no production requests |
 
-On October 12, both newly published win-x86 and win-x64 packages passed these 109 checks per architecture. The x86 run used WOW64 on the development computer. No live server request was made. Package filenames and hashes are recorded in [Windows distribution](distribution.md).
+The earlier October 12 builds passed 109 checks per architecture. The current .env builds additionally pass the 16 shared configuration checks (125 distinct checks), plus published CLI startup integration checks. The x86 run used WOW64 on the development computer. No live server request was made. Package filenames and hashes are recorded in [Windows distribution](distribution.md).
 
 The PHP harness independently launches actual temporary PHP servers, creates owned ZIP fixtures, exercises endpoints/configuration failures, and cleans up. A server-only test run needs Python and PHP, not .NET.
 
@@ -494,7 +531,7 @@ The essential publish flags are:
 -p:PublishTrimmed=false -p:DebugType=None -p:DebugSymbols=false
 ```
 
-The script uses self-contained Release publishing, defaults to win-x64, accepts win-x86 and win-arm64, checks publish exit codes, copies two EXEs plus example/README, compresses a ZIP, and prints SHA256. It creates unique directories instead of deleting prior releases. Intermediate output is under ignored downloads/release-builds; releases are under ignored dist. Native runtime components may extract on launch. The original package's verification described above was on win-x64; the win-x86 package also passed all 91 Windows checks under WOW64 on the development computer. Acceptance testing on a customer computer running 32-bit Windows remains pending.
+The script uses self-contained Release publishing, defaults to win-x64, accepts win-x86 and win-arm64, checks publish exit codes, copies two EXEs plus installation example, `.env.example`, and README, compresses a ZIP, and prints SHA256. It creates unique directories instead of deleting prior releases. Intermediate output is under ignored downloads/release-builds; releases are under ignored dist. Native runtime components may extract on launch. The original package's verification described above was on win-x64; the win-x86 package also passed all 91 Windows checks under WOW64 on the development computer. Acceptance testing on a customer computer running 32-bit Windows remains pending.
 
 To publish the 32-bit desktop and CLI with the x86 runtime:
 

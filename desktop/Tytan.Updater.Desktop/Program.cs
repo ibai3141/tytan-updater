@@ -10,6 +10,7 @@ internal static class Program
         // A smoke check exercises real file parsing and real WinForms controls.
         if (args.Length > 0 && args[0] == "--self-test")
         {
+            if (ConfigurationChecks.Run() != 0) return 1;
             int local = DesktopChecks.Run();
             if (local != 0)
             {
@@ -42,10 +43,11 @@ internal static class Program
 
         try
         {
+            StartupConfiguration.Load();
             Application.Run(new MainForm(args.Length == 1 ? Path.GetFullPath(args[0]) : null));
             return 0;
         }
-        catch (ArgumentException error)
+        catch (Exception error) when (error is ArgumentException or InvalidDataException or IOException or UnauthorizedAccessException)
         {
             MessageBox.Show(error.Message, "Tytan Updater", MessageBoxButtons.OK, MessageBoxIcon.Error);
             return 1;

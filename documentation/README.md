@@ -6,6 +6,8 @@ The preserved original delivery is TytanUpdater-win-x64-20261009-094714-e05a10. 
 
 A separate win-x86 package provides the same application workflow for 32-bit Windows, including the matching runtime. See [distribution instructions](distribution.md) to choose or publish the correct architecture.
 
+New builds also support an optional `.env` beside both executables, with a credential-free `.env.example` template and environment-variable precedence. See [user configuration](user-guide.md#server-configuration).
+
 The current source adds `TYTAN_API_BASE_URL` for both applications and an optional third CLI argument for the download directory. These features require a new build; the October 9 ZIPs are unchanged. See [CLI instructions](cli.md).
 
 ## Main guides

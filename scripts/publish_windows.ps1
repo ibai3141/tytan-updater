@@ -35,6 +35,8 @@ foreach ($app in $projects) {
     Copy-Item -LiteralPath $executable -Destination $releaseRoot
 }
 
+# Distribute only the credential-free template; never copy a private .env.
+Copy-Item -LiteralPath (Join-Path $repoRoot '.env.example') -Destination $releaseRoot
 Copy-Item -LiteralPath (Join-Path $repoRoot 'examples/installation.example.json') -Destination $releaseRoot
 Copy-Item -LiteralPath (Join-Path $repoRoot 'documentation/distribution-readme.txt') -Destination (Join-Path $releaseRoot 'README.txt')
 

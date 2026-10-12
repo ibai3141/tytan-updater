@@ -6,6 +6,19 @@ Use the build matching your Windows architecture: win-x86 for 32-bit Windows,
 win-x64 for 64-bit Intel/AMD Windows, or win-arm64 for Windows ARM64.
 The win-x86 package includes the 32-bit .NET runtime.
 
+OPTIONAL CONFIGURATION FILE
+
+Copy .env.example to .env beside the executables and edit URL and username.
+The desktop can then be opened with a double-click. Restart after editing.
+The file is optional. Existing environment variables override its values.
+Enter the password in the desktop, set TYTAN_API_PASSWORD in the terminal,
+or optionally add TYTAN_API_PASSWORD to .env (stored in plain text).
+Use UTF-8 and KEY=value lines. Full-line # comments and matching quotes work.
+Passwords containing # or = are literal; do not add inline comments.
+Only TYTAN_API_BASE_URL, TYTAN_API_USERNAME and TYTAN_API_PASSWORD are supported.
+Keep your private .env out of shared ZIPs and source control.
+The destination is still a command-line argument, not a .env setting.
+
 DESKTOP INTERFACE
 
 Double-click Tytan.Updater.Desktop.exe.

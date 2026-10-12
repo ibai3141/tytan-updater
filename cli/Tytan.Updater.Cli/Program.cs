@@ -8,7 +8,7 @@ internal static class Program
     {
         if (args.Length == 1 && args[0] == "--self-test")
         {
-            return await CommandChecks.RunAsync();
+            return ConfigurationChecks.Run() == 0 ? await CommandChecks.RunAsync() : 1;
         }
 
         using var cancellation = new CancellationTokenSource();
@@ -21,13 +21,14 @@ internal static class Program
 
         try
         {
+            StartupConfiguration.Load();
             using var api = new CloudApiClient();
             return await Command.RunAsync(args, api, Console.Out, Console.Error,
                 () => new Credentials(
                     Environment.GetEnvironmentVariable("TYTAN_API_USERNAME") ?? "TytanSQL",
                     Environment.GetEnvironmentVariable("TYTAN_API_PASSWORD") ?? ""), cancellation.Token);
         }
-        catch (ArgumentException error)
+        catch (Exception error) when (error is ArgumentException or InvalidDataException or IOException or UnauthorizedAccessException)
         {
             Console.Error.WriteLine("Error: " + error.Message);
             return 1;
